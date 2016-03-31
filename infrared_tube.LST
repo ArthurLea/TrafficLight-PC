@@ -1,0 +1,215 @@
+C51 COMPILER V9.00   INFRARED_TUBE                                                         03/31/2016 17:14:36 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE INFRARED_TUBE
+OBJECT MODULE PLACED IN infrared_tube.OBJ
+COMPILER INVOKED BY: E:\Single-Chip-Microcomputer\Keil\C51\BIN\C51.EXE infrared_tube.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include "config.h"
+   2          #include "infrared_tube.h"
+   3          
+   4          //闯红灯标志                                                              
+   5          extern volatile uchar s_n_stop_flag;//南北红灯标志
+   6          extern volatile uchar e_w_stop_flag;//东西红灯标志
+   7          
+   8          extern volatile uchar car_flow_detection_flag; 
+   9          /*
+  10                  当某个方向为红灯时，只有向右行驶才是合法的，其他方向（向左，直行均为违规）
+  11                  如：当南北为红灯时，南->东（或者北->西）方向的红外在短时间的延时内变为低电平（0）为合法，其余违规
+  12                      当东西为红灯时，西->南（或者东->北）方向的红外在短时间的延时内变为低电平（0）为合法，其余违规
+  13          
+  14                  参数：no
+  15                          
+  16                  返回值：uint，当前哪个方向上有闯红灯车流量
+  17          */
+  18          uint run_red_light()
+  19          {
+  20   1              if(s_n_stop_flag == 1)//南北方向为红灯或者黄灯时，检测南北方向的违规车辆
+  21   1              {
+  22   2                      if(INFRARED_S == 0)//南
+  23   2                      {
+  24   3                              delay(100);//延时100ms，表示车在这段时间中的模拟运行时间，然后到达下一个路口
+  25   3                              if(INFRARED_N == 0)
+  26   3                                      return S_TO_N;
+  27   3                              if(INFRARED_W == 0)
+  28   3                                      return S_TO_W;
+  29   3      
+  30   3                      }
+  31   2                      if(INFRARED_N == 0)//北
+  32   2                      {
+  33   3                              delay(100);//延时100ms
+  34   3                              if(INFRARED_S == 0)
+  35   3                                      return N_TO_S;
+  36   3                              if(INFRARED_E == 0)
+  37   3                                      return N_TO_E;
+  38   3                      }
+  39   2              }       
+  40   1              if(e_w_stop_flag == 1)//东西方向为红灯或者黄灯时，检测东西方向的违规车辆
+  41   1              {
+  42   2                      if(INFRARED_E == 0)//东
+  43   2                      {
+  44   3                              delay(100);//延时100ms
+  45   3                              if(INFRARED_W == 0)
+  46   3                      return E_TO_W;
+  47   3      
+  48   3                              if(INFRARED_S == 0)
+  49   3                                      return E_TO_S;
+  50   3                      }
+  51   2                      if(INFRARED_W == 0)//西
+  52   2                      {
+  53   3                              delay(100);//延时100ms
+  54   3                              if(INFRARED_E == 0)
+  55   3                                      return W_TO_E;
+C51 COMPILER V9.00   INFRARED_TUBE                                                         03/31/2016 17:14:36 PAGE 2   
+
+  56   3                              if(INFRARED_N == 0)
+  57   3                                      return W_TO_N;
+  58   3                      }
+  59   2              }
+  60   1      
+  61   1              return 0;//合法
+  62   1      }
+  63          /*
+  64                  不断检测车流量传感器传过来的数据，然后南北、东西传感器采集的数据分别计算总和然后除以2，
+  65                  分别然后赋值给car_num[2]数组，
+  66          
+  67                  理论计算法：
+  68                  单位时间内通过某路段的车辆：车流量=单位时间*车速/（车距+车身长）
+  69                  模拟计算法：
+  70                  单位时间内（一个红绿灯循环周期）内通过交通十字路口某方向上的的车辆数：
+  71                          南北车流量 = (num[0] + (INFRARED_S+INFRARED_N)%2+(INFRARED_S+INFRARED_N)/2)/cycle_nums;
+  72                          东西车流量 = (num[1] + (INFRARED_E+INFRARED_W)%2+(INFRARED_E+INFRARED_W)/2)/cycle_nums;
+  73          
+  74                  参数：
+  75                          num[] uchar: 存储南北东西方向上的车流量
+  76                                  [0]表示南北
+  77                                  [1]表示东西
+  78                  返回值：void
+  79          */
+  80          void car_flow_detection(uint num[])
+  81          {        
+  82   1              //记录南北东西方向上的车辆数
+  83   1              uchar nums_from_sou = 0;
+  84   1              uchar nums_from_nor = 0;
+  85   1              uchar nums_from_eas = 0;
+  86   1              uchar nums_from_wes = 0;
+  87   1              /*
+  88   1                      无论什么情况下，向右是允许的
+  89   1                      南-》东，
+  90   1                      东-》北，
+  91   1                      北-》西，
+  92   1                      西-》南，
+  93   1              */
+  94   1              //s_n_stop_flag == 0
+  95   1              //表示南北可以通行，此时南-》北，南-》西---向南方向有车
+  96   1              //                                              北-》南，北-》东---向北方向有车
+  97   1              if(s_n_stop_flag == 0)
+  98   1              {
+  99   2                      if(INFRARED_S == 0)
+ 100   2                      {
+ 101   3                              delay(100);//延时100ms，表示车在这段时间中的模拟运行时间，然后到达下一个路口
+ 102   3                              /* 南--》北、南--》西 */
+ 103   3                              if((INFRARED_N==0) || (INFRARED_W==0))
+ 104   3                                      nums_from_sou++;        
+ 105   3                      }
+ 106   2                      if(INFRARED_N == 0)
+ 107   2                      {
+ 108   3                              delay(100);
+ 109   3                              /* 北-》南，北-》东 */
+ 110   3                              if((INFRARED_S==0) || (INFRARED_E==0))
+ 111   3                                      nums_from_nor++;        
+ 112   3                      }
+ 113   2              }
+ 114   1              //e_w_stop_flag == 0
+ 115   1              //表示东西可以通行，此时东-》西，东-》南---向东方向有车
+ 116   1              //                                              西-》东，西-》北---向西方向有车
+ 117   1              
+C51 COMPILER V9.00   INFRARED_TUBE                                                         03/31/2016 17:14:36 PAGE 3   
+
+ 118   1              if(e_w_stop_flag == 0)
+ 119   1              {
+ 120   2                      if(INFRARED_E == 0)
+ 121   2                      {
+ 122   3                              delay(100);
+ 123   3                              /* 东-》西，东-》南 */
+ 124   3                              if((INFRARED_W==0) || (INFRARED_S==0))
+ 125   3                                      nums_from_eas++;        
+ 126   3                      }
+ 127   2                      if(INFRARED_W == 0)
+ 128   2                      {
+ 129   3                              delay(10);//延时10ms，如果该传感器状态不变，表示有车
+ 130   3                              /* 西-》东，西-》北 */
+ 131   3                              if((INFRARED_E==0) || (INFRARED_N==0))
+ 132   3                                      nums_from_wes++;        
+ 133   3                      }
+ 134   2              }
+ 135   1              if(INFRARED_S == 0)
+ 136   1              {
+ 137   2                      delay(100);
+ 138   2                      /* 南-》东 */
+ 139   2                      if(INFRARED_E == 0)
+ 140   2                      {
+ 141   3                              nums_from_sou++;
+ 142   3                              nums_from_eas++;
+ 143   3                      }
+ 144   2              }
+ 145   1              
+ 146   1              if(INFRARED_E == 0)
+ 147   1              {
+ 148   2                      delay(100);
+ 149   2                      /* 东-》北 */
+ 150   2                      if(INFRARED_N == 0)
+ 151   2                      {
+ 152   3                              nums_from_eas++;
+ 153   3                              nums_from_nor++;
+ 154   3                      }
+ 155   2              }
+ 156   1              if(INFRARED_N == 0)
+ 157   1              {
+ 158   2                      delay(100);
+ 159   2                      /* 北-》西 */
+ 160   2                      if(INFRARED_W == 0)
+ 161   2                      {
+ 162   3                              nums_from_nor++;
+ 163   3                              nums_from_wes++;
+ 164   3                      }
+ 165   2              }
+ 166   1              
+ 167   1              if(INFRARED_W == 0)
+ 168   1              {
+ 169   2                      delay(100);
+ 170   2                      /* 西-》南 */
+ 171   2                      if(INFRARED_S == 0)
+ 172   2                      {
+ 173   3                              nums_from_wes++;
+ 174   3                              nums_from_sou++;
+ 175   3                      }
+ 176   2              }
+ 177   1              //将四个方向上的数据储存
+ 178   1              if((TR0==1) && (car_flow_detection_flag==0))//表示现在处于一个循环模式下,并没有进行车流量的判断
+ 179   1              {
+C51 COMPILER V9.00   INFRARED_TUBE                                                         03/31/2016 17:14:36 PAGE 4   
+
+ 180   2                      //东西南北车辆数目存储
+ 181   2                      num[0] +=  nums_from_eas;
+ 182   2                      num[1] +=  nums_from_sou;
+ 183   2                      num[2] +=  nums_from_wes;
+ 184   2                      num[3] +=  nums_from_nor;
+ 185   2              }
+ 186   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    335    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       7
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

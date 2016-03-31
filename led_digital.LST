@@ -1,0 +1,12 @@
+C51 COMPILER V9.00   LED_DIGITAL                                                           03/17/2016 16:32:43 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE LED_DIGITAL
+OBJECT MODULE PLACED IN led_digital.OBJ
+COMPILER INVOKED BY: E:\Single-Chip-Microcomputer\Keil\C51\BIN\C51.EXE led_digital.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+*** ERROR C318 OF led_digital.c: can't open file 'led_digital.c'
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  1 ERROR(S)

@@ -1,0 +1,156 @@
+C51 COMPILER V9.00   KEY                                                                   03/31/2016 17:14:36 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE KEY
+OBJECT MODULE PLACED IN key.OBJ
+COMPILER INVOKED BY: E:\Single-Chip-Microcomputer\Keil\C51\BIN\C51.EXE key.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include "config.h"
+   2          #include "key.h"
+   3          #include "max7219.h"
+   4          extern volatile uchar Sou_Nor_Red_Time;
+   5          extern volatile uchar Sou_Nor_Green_Time;
+   6          extern volatile uchar Sou_Nor_Red_Time_Temp;
+   7          extern volatile uchar Sou_Nor_Green_Time_Temp;
+   8          uchar scankey()
+   9          {
+  10   1              uchar num = 16;
+  11   1              uchar temp = 0;
+  12   1              uchar row = 0;
+  13   1              uchar column = 0;
+  14   1              uchar row_scan = 0XFE;//采用逐行扫描，置行扫描初值为0XFE
+  15   1              uchar row_scan_temp = 0;
+  16   1              P1 = 0XF0;
+  17   1              temp = P1;//按键手动按下时ms级，程序运行是us级
+  18   1              if((temp&0XF0) != 0XF0)
+  19   1              {       
+  20   2                      //for(i=0;i<4;row++)//检测行
+  21   2                      while(row_scan != 0XEF)
+  22   2                      {
+  23   3                              P1 = row_scan;
+  24   3                              temp = P1;
+  25   3                              if((temp&0XF0) != 0XF0)
+  26   3                              {
+  27   4                                      buzzer();//延时消抖动
+  28   4                                      P1 = temp;
+  29   4                                      temp = (temp&0XF0);//屏蔽低四位，保留高四位
+  30   4                              
+  31   4                                      switch(temp)//得到列号
+  32   4                                      {
+  33   5                                              case 0XE0:
+  34   5                                                      column = 0;
+  35   5                                                      break;
+  36   5                                              case 0XD0:
+  37   5                                                      column = 1;
+  38   5                                                      break;
+  39   5                                              case 0XB0:
+  40   5                                                      column = 2;
+  41   5                                                      break;
+  42   5                                              case 0X70:
+  43   5                                                      column = 3;
+  44   5                                                      break;  
+  45   5                                      }
+  46   4      
+  47   4                                      row = (row_scan & 0X0F);
+  48   4                                      switch(row)//得到行号
+  49   4                                      {
+  50   5                                              case 0X0E:
+  51   5                                                      row = 0;
+  52   5                                                      break;
+  53   5                                              case 0X0D:
+  54   5                                                      row = 1;
+  55   5                                                      break;
+C51 COMPILER V9.00   KEY                                                                   03/31/2016 17:14:36 PAGE 2   
+
+  56   5                                              case 0X0B:
+  57   5                                                      row = 2;
+  58   5                                                      break;
+  59   5                                              case 0X07:
+  60   5                                                      row = 3;
+  61   5                                                      break;  
+  62   5                                      }
+  63   4                                      num = column + row*4;
+  64   4                                      break;
+  65   4                              }
+  66   3                              else
+  67   3                              {
+  68   4                                      row_scan_temp = row_scan;
+  69   4                                      row_scan = (row_scan<<1)|(row_scan_temp>>(8-1));//8==sizeof(uchar)
+  70   4                              }
+  71   3                      }
+  72   2              }
+  73   1              return num;
+  74   1      }
+  75          void set_time(uint flag)
+  76          {
+  77   1              uchar result = 5;//直接确认，默认返回20秒
+  78   1              uchar current_key = 16;
+  79   1              uint pull_key_nums = 0;
+  80   1              while(1)
+  81   1              {
+  82   2                      current_key = scankey();
+  83   2                      if(current_key == OK)
+  84   2                      {
+  85   3                              wr_max7219(Addr_Digit0,max7219_7led_code[Sou_Nor_Green_Time_Temp/10]);   
+  86   3                              wr_max7219(Addr_Digit1,max7219_7led_code[Sou_Nor_Green_Time_Temp%10]);
+  87   3                              wr_max7219(Addr_Digit2,max7219_7led_code[Sou_Nor_Red_Time/10]);  
+  88   3                              wr_max7219(Addr_Digit3,max7219_7led_code[Sou_Nor_Red_Time%10]);
+  89   3                              break;
+  90   3                      }
+  91   2                      if((0<=current_key) && (current_key<=9))
+  92   2                      {
+  93   3                              pull_key_nums++;
+  94   3                              switch(pull_key_nums)
+  95   3                              {
+  96   4                                      case 1:
+  97   4                                              result = current_key;
+  98   4                                              break;
+  99   4                                      case 2:
+ 100   4                                              result = result*10 + current_key;
+ 101   4                                              break;
+ 102   4                                      default://pull_key_nums>2;时间设置超过100，最多99秒
+ 103   4                                              result = current_key;
+ 104   4                                              pull_key_nums = 1;
+ 105   4                                              break;
+ 106   4                              }
+ 107   3                      }
+ 108   2                      else if(current_key == DEL)
+ 109   2                      {
+ 110   3                              result = 0;
+ 111   3                              pull_key_nums = 0;      
+ 112   3                      }
+ 113   2                      if(flag == 1)//南北
+ 114   2                      {
+ 115   3                              Sou_Nor_Green_Time = result;
+ 116   3                              Sou_Nor_Green_Time_Temp = result;
+ 117   3                              wr_max7219(Addr_Digit0,max7219_7led_code[Sou_Nor_Green_Time_Temp/10]);   
+C51 COMPILER V9.00   KEY                                                                   03/31/2016 17:14:36 PAGE 3   
+
+ 118   3                              wr_max7219(Addr_Digit1,max7219_7led_code[Sou_Nor_Green_Time_Temp%10]);
+ 119   3                      }
+ 120   2                      if(flag == 2)//东西
+ 121   2                      {
+ 122   3                              Sou_Nor_Red_Time = result;
+ 123   3                              Sou_Nor_Red_Time_Temp = Sou_Nor_Red_Time;
+ 124   3                              wr_max7219(Addr_Digit2,max7219_7led_code[Sou_Nor_Red_Time_Temp/10]);     
+ 125   3                              wr_max7219(Addr_Digit3,max7219_7led_code[Sou_Nor_Red_Time_Temp%10]);                            
+ 126   3                      }
+ 127   2                      current_key = 16;
+ 128   2              }
+ 129   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    445    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      12
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

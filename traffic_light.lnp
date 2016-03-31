@@ -1,0 +1,11 @@
+"STARTUP.obj",
+"main.obj",
+"max7219.obj",
+"led.obj",
+"interrupt.obj",
+"key.obj",
+"uart.obj",
+"infrared_tube.obj",
+"config.obj" 
+TO "traffic_light" 
+RAMSIZE(256) 
