@@ -32,10 +32,10 @@ volatile uchar Sou_Nor_Green_Time_Temp;
 uchar code big_time = 10;//³¤Ê±¼ä
 uchar code small_time = 5;//¶ÌÊ±¼ä
 
-volatile uchar night_flag = 0;//Ò¹ÍíÄ£Ê½±êÖ¾
-volatile uchar Phone_Set_Finish = 0;//ÊÖ»úÉèÖÃÍê±Ï±ê¼Ç
+volatile uchar Phone_OK_Finish = 0;//ÊÖ»úÉèÖÃÍê±Ï±ê¼Ç
 //Íâ²¿¹²Ïí±äÁ¿
-extern uchar stop_flag;//½ûÖ¹Í¨ĞĞ±ê¼Ç
+extern uchar enter_stop_flag;//½ûÖ¹Í¨ĞĞ±ê¼Ç
+volatile uchar quit_stop_flag = 0;
 extern uchar car_flow_detection_flag;
 //³µÁ÷Á¿¼ì²â
 volatile uint car_num[4] = {0,0,0,0};//0-¶«·½ÏòÉÏµÄ³µÁ÷Á¿
@@ -47,21 +47,28 @@ extern volatile uchar cycle_nums;//from interrupt.c file
 //º¯ÊıÉùÃ÷
 void init_register_s52();
 void init_Numeric_Display();
-void phone_set();
+void phone_remote_set();
+void phone_remote_control();
 
-
+void clearFlag()
+{
+	Phone_OK_Finish = 0;
+	enter_stop_flag	= 0;
+	quit_stop_flag = 0;
+	car_flow_detection_flag = 0;	
+}
 int main()
 {
 	uchar key_num = 17;/*µ±Ç°°´¼üÖµ*/
 	uint run_red_light_result = 0;/*´³ºìÂÌµÆµÄ½á¹û*/
-	u32 sou_nor_nums = 0;/* ÄÏ±±·½ÏòÉÏµÄ³µÁ÷Á¿×ÜºÍ*/
-	u32 eas_wes_nums = 0;/* ¶«Î÷·½ÏòÉÏµÄ³µÁ÷Á¿×ÜºÍ*/
+	uint sou_nor_nums = 0;/* ÄÏ±±·½ÏòÉÏµÄ³µÁ÷Á¿×ÜºÍ*/
+	uint eas_wes_nums = 0;/* ¶«Î÷·½ÏòÉÏµÄ³µÁ÷Á¿×ÜºÍ*/
 	uint cycle_time = 0;/* Ñ­»·ÖÜÆÚµÄÊ±¼ä*/
 	init_register_s52();
 	init_max7219();
 	quit_led();
 	buzzer();
-
+	send_reset_to_phone('9'); //ÏÂÎ»»ú¸´Î»
 	while(1)
 	{	 
 		/*ÏµÍ³¿ªÊ¼¼ì²âÏµÍ³Ä£Ê½£¬µ±OK¼üÔÚËùÓĞ¼üÒÔ¼°ÊÖ»ú¿ØÖÆÖ®Ç°°´ÏÂÊ±Îª×Ô¶¯Ä£Ê½,Ã¿¸ö·½Ïò¼ÆÊ±20s
@@ -70,26 +77,40 @@ int main()
 		 *¿ªÊ¼¼ì²â°´¼ü»òÊÖ»úÔ¶³ÌÉèÖÃ
 		 */
 		key_num = scankey();
-		if((key_num==OK) || (Phone_Set_Finish==1))//°´¼ü¶ËÖ±½Ó¿ØÖÆ£¬ÏµÍ³ÕıÊ½Æô¶¯ 
+		if((key_num==OK) || (Phone_OK_Finish==1))//°´¼ü¶ËÖ±½Ó¿ØÖÆ£¬ÏµÍ³ÕıÊ½Æô¶¯ 
 		{
+			Phone_OK_Finish = 0;
 			init_led();
 			init_Numeric_Display();
-			TR0 = 1;
+			clearFlag();
+			TR0 = 1;	
+
+			cycle_time = Sou_Nor_Green_Time + Sou_Nor_Red_Time + Sou_Nor_Yellow_Time + West_East_Yellow_Time;		
+			send_cycle_time_to_phone('8',cycle_time);//·¢ËÍÑ­»·Ê±¼ä		  
 			while(1)
 			{
+				
+				/*
+				 * ÊÖ»ú¶ËÔ¶³Ì¿ØÖÆÄ£¿é
+				 */
+				phone_remote_control();
 				/*
 				 *½ô¼±Çé¿öÄ£¿é
 				 */
-				if(stop_flag==1)//½ô¼±Çé¿ö±ê¼Ç
-				{
+				if(enter_stop_flag == 1)//½ô¼±Çé¿ö±ê¼Ç
+				{	
+					TR0 = 0;//½ûÍ£ºó£¬¹Ø±Õ¶¨Ê±Æ÷
 					buzzer();			  
 					all_led_red();
-					while(stop_flag)
+					while(enter_stop_flag)
 					{
 						key_num = scankey();
-						if(OK == key_num)
+						phone_remote_control();
+						if((OK==key_num) || (Phone_OK_Finish == 1) || (quit_stop_flag==1))
 						{
-							stop_flag = 0;
+							enter_stop_flag = 0;
+							Phone_OK_Finish = 0;		 
+							quit_stop_flag = 0;
 							TR0 = 1;//ÔÙ´ÎÆô¶¯¶¨Ê±Æ÷
 						}
 					}
@@ -100,94 +121,98 @@ int main()
 				 run_red_light_result = run_red_light();
 				 if(run_red_light_result != 0)
 				 {
-				 	
+					buzzer();
 					//½«´³ºìµÆ¾ßÌå·½Î»Êı¾İÍ¨¹ı´®¿Ú×ªÀ¶ÑÀ´«ËÍµ½ÊÖ»úÖÕ¶Ë
 					//Êı¾İCRC·â×°
-
-					//send_run_red_light_to_phone();
+					send_run_red_light_to_phone('4',run_red_light_result);
 					run_red_light_result = 0;
-					buzzer();
 				 }
 				/*
 				 * ³µÁ¾¼ì²âÄ£¿é
 				 */
-				/*µÃµ½Ã¿¸ö·½ÏòÉÏµÄ³µÁ÷Á¿´¢´æµ½car_numÊı×éÖĞ*/
+				//µÃµ½Ã¿¸ö·½ÏòÉÏµÄ³µÁ÷Á¿´¢´æµ½car_numÊı×éÖĞ
 				car_flow_detection(car_num);
-				/*¼ÆËãÄÏ±±¡¢¶«Î÷·½ÏòÉÏµÄ³µÁ¾ÊıËãÊıÆ½¾ùÖµ£¬Ä£ÄâÈ¡³öÕûÊıÖµ*/
+				//¼ÆËãÄÏ±±¡¢¶«Î÷·½ÏòÉÏµÄ³µÁ¾ÊıËãÊıÆ½¾ùÖµ£¬Ä£ÄâÈ¡³öÕûÊıÖµ
 				sou_nor_nums = (car_num[1]+car_num[3])/cycle_nums;
 				eas_wes_nums = (car_num[0]+car_num[2])/cycle_nums;
-				/*¼ÆËãÑ­»·ÖÜÆÚµÄÊ±¼äºÍ*/
+				//¼ÆËãÑ­»·ÖÜÆÚµÄÊ±¼äºÍ
 				cycle_time = Sou_Nor_Green_Time + Sou_Nor_Red_Time + Sou_Nor_Yellow_Time + West_East_Yellow_Time;
-				/* ¼ÆËã³µÁ÷Á¿*/
-				
+				//¼ÆËã³µÁ÷Á¿
+				//??????????
 				//½«Á½¸ö·½ÏòÉÏµÄ³µÁ÷Á¿Êı¾İÍ¨¹ı´®¿Ú×ªÀ¶ÑÀ´«ËÍµ½ÊÖ»úÖÕ¶Ë
 				//Êı¾İCRC·â×°
-				//car_num[0]--[3],sou_nor_nums,eas_wes_nums,cycle_nums£¬cycle_time
-
-				//send_car_flow_to_phone(car_num);
+				//sou_nor_nums,eas_wes_nums,cycle_nums£¬cycle_time
 				
 				if(car_flow_detection_flag == 1)
 				{ 
-					 //Ä£Äâ¸Ä±äÄÏ±±¶«Î÷·½ÏòÉÏµÄºìÂÌµÆÊ±¼ä
-					 if(Sou_Nor_Green_Time <= small_time)
-					 {
-					 	if(sou_nor_nums > 10)//10Á¾
-							Sou_Nor_Green_Time = big_time;
-						else
-							Sou_Nor_Green_Time = small_time;	
-					 }
-					 else if((Sou_Nor_Green_Time>small_time) && Sou_Nor_Green_Time<=big_time)
-					 {
-					 	if(sou_nor_nums <= 10)
-							Sou_Nor_Green_Time = small_time; 
-						else
-							Sou_Nor_Green_Time = big_time;
-					 }
-					 else if(Sou_Nor_Green_Time > big_time)
-					 {
-					 	if(sou_nor_nums <= 20)
-							Sou_Nor_Green_Time = small_time; 
-						else if((sou_nor_nums>20) && (sou_nor_nums <= 40))
-							Sou_Nor_Green_Time = big_time + 10;
-						else if((sou_nor_nums>40) && (sou_nor_nums <= 70))
-							Sou_Nor_Green_Time = big_time + 20;
-						else
-							Sou_Nor_Green_Time = 99;
-					 }
-					 //ÆäËûµÄÕı³£
-
-					 //Ä£Äâ¸Ä±ä¶«Î÷¶«Î÷·½ÏòÉÏµÄºìÂÌµÆÊ±
-					 if(Sou_Nor_Red_Time <= small_time)
-					 {
-					 	if(eas_wes_nums > 10)//10Á¾
-							Sou_Nor_Red_Time = big_time;
-						else
-							Sou_Nor_Red_Time = small_time;	
-					 }
-					 else if((Sou_Nor_Red_Time>small_time) && (Sou_Nor_Red_Time<=big_time))
-					 {
-					 	if(eas_wes_nums <= 10)
-							Sou_Nor_Red_Time = small_time;
-						else
-							Sou_Nor_Red_Time = big_time; 
-					 }
-					 else if(Sou_Nor_Red_Time > big_time)
-					 {
-					 	if(eas_wes_nums <= 20)
-							Sou_Nor_Red_Time = small_time; 
-						else if((eas_wes_nums>20) && (eas_wes_nums <= 40))
-							Sou_Nor_Red_Time = big_time + 10;
-						else if((eas_wes_nums>40) && (eas_wes_nums <= 70))
-							Sou_Nor_Red_Time = big_time + 20;
-						else
-							Sou_Nor_Red_Time = 99;
-					 } 
-					 Sou_Nor_Green_Time_Temp = Sou_Nor_Green_Time;
-					 Sou_Nor_Red_Time_Temp = Sou_Nor_Red_Time;
-
-					 car_flow_detection_flag = 0;//×Ô¶¯Ñ­»·Ä£Ê½±ê¼Ç¼ì²â´¦Àí½áÊø£¬ÖÃÎª0	
+					//Ò»¸öÑ­»·ÖÜÆÚ·¢ËÍÒ»´Î³µÁ÷Á¿×´Ì¬
+					send_sou_nor_nums_to_phone('5',sou_nor_nums);
+					delay(100);
+					send_eas_wes_nums_to_phone('6',eas_wes_nums); 
+					delay(100);
+					send_cycle_nums_to_phone('7',cycle_nums);  	
+					delay(100);
+					send_cycle_time_to_phone('8',cycle_time);//·¢ËÍÑ­»·Ê±¼ä	
+					//Ä£Äâ¸Ä±äÄÏ±±¶«Î÷·½ÏòÉÏµÄºìÂÌµÆÊ±¼ä
+					if(Sou_Nor_Green_Time <= small_time)
+					{
+					if(sou_nor_nums > 10)//10Á¾
+						Sou_Nor_Green_Time = big_time;
+					else
+						Sou_Nor_Green_Time = small_time;	
+					}
+					else if((Sou_Nor_Green_Time>small_time) && Sou_Nor_Green_Time<=big_time)
+					{
+					if(sou_nor_nums <= 10)
+						Sou_Nor_Green_Time = small_time; 
+					else
+						Sou_Nor_Green_Time = big_time;
+					}
+					else if(Sou_Nor_Green_Time > big_time)
+					{
+					if(sou_nor_nums <= 20)
+						Sou_Nor_Green_Time = small_time; 
+					else if((sou_nor_nums>20) && (sou_nor_nums <= 40))
+						Sou_Nor_Green_Time = big_time + 10;
+					else if((sou_nor_nums>40) && (sou_nor_nums <= 70))
+						Sou_Nor_Green_Time = big_time + 20;
+					else
+						Sou_Nor_Green_Time = 99;
+					}
+					//ÆäËûµÄÕı³£
+					
+					//Ä£Äâ¸Ä±ä¶«Î÷¶«Î÷·½ÏòÉÏµÄºìÂÌµÆÊ±
+					if(Sou_Nor_Red_Time <= small_time)
+					{
+					if(eas_wes_nums > 10)//10Á¾
+						Sou_Nor_Red_Time = big_time;
+					else
+						Sou_Nor_Red_Time = small_time;	
+					}
+					else if((Sou_Nor_Red_Time>small_time) && (Sou_Nor_Red_Time<=big_time))
+					{
+					if(eas_wes_nums <= 10)
+						Sou_Nor_Red_Time = small_time;
+					else
+						Sou_Nor_Red_Time = big_time; 
+					}
+					else if(Sou_Nor_Red_Time > big_time)
+					{
+					if(eas_wes_nums <= 20)
+						Sou_Nor_Red_Time = small_time; 
+					else if((eas_wes_nums>20) && (eas_wes_nums <= 40))
+						Sou_Nor_Red_Time = big_time + 10;
+					else if((eas_wes_nums>40) && (eas_wes_nums <= 70))
+						Sou_Nor_Red_Time = big_time + 20;
+					else
+						Sou_Nor_Red_Time = 99;
+					} 
+					Sou_Nor_Green_Time_Temp = Sou_Nor_Green_Time;
+					Sou_Nor_Red_Time_Temp = Sou_Nor_Red_Time;
+					
+					car_flow_detection_flag = 0;//×Ô¶¯Ñ­»·Ä£Ê½±ê¼Ç¼ì²â´¦Àí½áÊø£¬ÖÃª0	
 				}
-				if((sou_nor_nums>10000) || (eas_wes_nums>10000))//ÖØÖÃ³µÁ÷Á¿Êı¾İ£¬²¢½«Ñ­»·´ÎÊıÉèÖÃÎª0
+				if((sou_nor_nums>999) || (eas_wes_nums>999))//ÖØÖÃ³µÁ÷Á¿Êı¾İ£¬²¢½«Ñ­»·´ÎÊıÉèÖÃÎª0
 				{
 					car_num[0] = 0;
 					car_num[1] = 0;
@@ -195,11 +220,6 @@ int main()
 					car_num[3] = 0;
 					cycle_nums  = 0;
 				}
-
-				/*
-				 * ÊÖ»ú¶ËÔ¶³Ì¿ØÖÆÄ£¿é
-				 */
-				 //phone_set();
 			}
 		}
 		/*
@@ -222,7 +242,7 @@ int main()
 			set_time(2);
 		}
 		//2¡¢ÊÖ»ú¶ËÃüÁîÉèÖÃÄ£¿é
-		phone_set();
+		phone_remote_control();
 	}
 	return 0;
 }
@@ -230,7 +250,7 @@ int main()
 /*
  * ÊÖ»ú¶Ë
  */
-void phone_set()
+void phone_remote_control()	
 {
 	uint i;
 	switch(uartState)
@@ -250,12 +270,7 @@ void phone_set()
 		case UART_RECEIVE:
 		{
 			timeout++;
-//			if ((timeout>0x8000) || (recieve_Buf[(pointer-1)]==0XEF) || (pointer>7) || (pointer >= recieve_Buf[0]))//[0]±íÊ¾Êı¾İ³¤¶È
-//			{
-//				uartState = UART_PROCESS; 
-//				break;
-//			}
-			if ((timeout>0x8000) || (recieve_Buf[(pointer-1)]=='F') || (pointer>7) || (pointer >= recieve_Buf[0]))//[0]±íÊ¾Êı¾İ³¤¶È
+			if ((timeout>0x8000) || (recieve_Buf[(pointer-1)]=='F') || (pointer>7) || (pointer >= (recieve_Buf[1])-'0'))//[0]±íÊ¾Êı¾İ³¤¶È
 			{
 				uartState = UART_PROCESS; 
 				break;
@@ -270,47 +285,56 @@ void phone_set()
 		}
 		case UART_PROCESS:
 		{
+			//½«ÊÖ»ú¶Ë½ÓÊÕµ½µÄ×Ö·û´®×ª»»Îª16½øÖÆ
+			uartState = UART_IDLE; 
+
 			for(i=0; i<pointer;i++)
 			{
 				sendByte(recieve_Buf[i]);
 				delay(1);
 			}
-			//½«ÊÖ»ú¶Ë½ÓÊÕµ½µÄ×Ö·û´®×ª»»Îª16½øÖÆ
-			uartState = UART_IDLE;
-	  		g_cCommand = recieve_Buf[1] ; //È¡³ö¹¦ÄÜÃüÁî×Ö
+
+	  		g_cCommand = recieve_Buf[2] ; //È¡³ö¹¦ÄÜÃüÁî×Ö
 //					i =	g_cReceBuf[0]-2;
 //					CRCdata = CRC16(g_cReceBuf,i);//½øĞĞCRCÑ­»·Ğ£Ñé
 
-			if((timeout<0x8000)/* && (CRCdata==(u16)(g_cReceBuf[i]<<8)+g_cReceBuf[i+1])*/ )
+			if((timeout<0x8000) && (recieve_Buf[0]=='$')/* && (CRCdata==(u16)(g_cReceBuf[i]<<8)+g_cReceBuf[i+1])*/ )
 			{
 				switch(g_cCommand)
 				{
+					
+					case '0'://ÊÖ»úÈ·ÈÏÉèÖÃÍê±Ï
+						Phone_OK_Finish = 1; 
+						buzzer();	  
+						break;
 					case '1'://ÉèÖÃÊ±¼ä
 					{
-						if(recieve_Buf[2] == '1')//ÉèÖÃÄÏ±±ÂÌµÆÊ±¼ä
+						if(recieve_Buf[3] == '1')//ÉèÖÃÄÏ±±ÂÌµÆÊ±¼ä
 						{						
-							Sou_Nor_Green_Time = recieve_Buf[3] - '0';//×Ö·ûµÄASCII
+							Sou_Nor_Green_Time = (recieve_Buf[4] - '0')*10 + (recieve_Buf[5] - '0');//×Ö·ûµÄASCII
 							Sou_Nor_Green_Time_Temp =  Sou_Nor_Green_Time;
 							wr_max7219(Addr_Digit0,max7219_7led_code[Sou_Nor_Green_Time_Temp/10]);	 
 							wr_max7219(Addr_Digit1,max7219_7led_code[Sou_Nor_Green_Time_Temp%10]);
 						}
-						if(recieve_Buf[2] == '2')//ÉèÖÃ¶«Î÷ÂÌµÆÊ±¼ä
-						{							
-							Sou_Nor_Red_Time = recieve_Buf[3] - '0';
+						if(recieve_Buf[3] == '2')//ÉèÖÃ¶«Î÷ÂÌµÆÊ±¼ä
+						{							 
+							Sou_Nor_Red_Time = (recieve_Buf[4] - '0')*10 + (recieve_Buf[5] - '0');
 							Sou_Nor_Red_Time_Temp =  Sou_Nor_Red_Time;
-							wr_max7219(Addr_Digit2,max7219_7led_code[Sou_Nor_Green_Time_Temp/10]);	 
-							wr_max7219(Addr_Digit3,max7219_7led_code[Sou_Nor_Green_Time_Temp%10]);
-						}	
+							wr_max7219(Addr_Digit2,max7219_7led_code[Sou_Nor_Red_Time_Temp/10]);	 
+							wr_max7219(Addr_Digit3,max7219_7led_code[Sou_Nor_Red_Time_Temp%10]);
+						}
+						buzzer();	
 						break;
 					}
 					case '2'://½ûÖ¹Í¨ĞĞ
-						stop_flag = 1;
+						enter_stop_flag = 1;
+						buzzer();
 						break;
-					case '3'://Ò¹ÍíÄ£Ê½
-						night_flag = 1;
+					case '3'://¿ªÆôÍ¨ĞĞ
+						quit_stop_flag = 1;
+						buzzer();
 						break;
-					case '4'://ÊÖ»úÈ·ÈÏÉèÖÃÍê±Ï
-						Phone_Set_Finish = 1;
+					default:
 						break;
 				}
 			}
@@ -318,7 +342,6 @@ void phone_set()
 		}
 	} 
 }
-
 /*
  *³õÊ¼»¯52µ¥Æ¬»úµÄ¼Ä´æÆ÷£¬Íâ²¿ÖĞ¶Ï£¬¶¨Ê±Æ÷£¬ÒÔ¼°ÏàÒÀÓÅÏÈ¼¶µÈ
  */

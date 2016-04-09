@@ -1,4 +1,4 @@
-C51 COMPILER V9.00   UART                                                                  03/31/2016 17:14:36 PAGE 1   
+C51 COMPILER V9.00   UART                                                                  04/09/2016 11:58:53 PAGE 1   
 
 
 C51 COMPILER V9.00, COMPILATION OF MODULE UART
@@ -44,14 +44,126 @@ line level    source
   35          {
   36   1         SBUF = value;
   37   1      }
+  38          void send_run_red_light_to_phone(uchar command,uchar run_red_light_result)
+  39          {
+  40   1              uchar dat[8] = {'0'};
+  41   1              uint i = 0;
+  42   1              dat[0] = '$';
+  43   1              dat[1] = '8';
+  44   1              dat[2] = command;
+  45   1              dat[3] = run_red_light_result;
+  46   1              dat[4] = '0';
+  47   1              dat[5] = '0';
+  48   1              dat[6] = '0';
+  49   1              dat[7] = 'F';
+  50   1              for(i=0;i<8;i++)
+  51   1              {
+  52   2                      sendByte(dat[i]);
+  53   2                      delay(1);
+  54   2              }       
+  55   1      }                 
+C51 COMPILER V9.00   UART                                                                  04/09/2016 11:58:53 PAGE 2   
+
+  56          void send_sou_nor_nums_to_phone(uchar command,uint sou_nor_nums)
+  57          {
+  58   1              uchar dat[8] = {'0'};
+  59   1              uint i = 0;
+  60   1              dat[0] = '$';
+  61   1              dat[1] = '8';
+  62   1              dat[2] = command;
+  63   1              dat[3] = sou_nor_nums/100 + '0';
+  64   1              dat[4] = sou_nor_nums/10 + '0';
+  65   1              dat[5] = sou_nor_nums%10 + '0';
+  66   1              dat[6] = '0';
+  67   1              dat[7] = 'F';
+  68   1              for(i=0;i<8;i++)
+  69   1              {
+  70   2                      sendByte(dat[i]);
+  71   2                      delay(1);
+  72   2              }
+  73   1      }
+  74          void send_eas_wes_nums_to_phone(uchar command,uint eas_wes_nums)
+  75          {
+  76   1              uchar dat[8] = {'0'};
+  77   1              uint i = 0;
+  78   1              dat[0] = '$';
+  79   1              dat[1] = '8';
+  80   1              dat[2] = command;
+  81   1              dat[3] = eas_wes_nums/100 + '0';  
+  82   1              dat[4] = eas_wes_nums/10 + '0';
+  83   1              dat[5] = eas_wes_nums%10 + '0';
+  84   1              dat[6] = '0';
+  85   1              dat[7] = 'F';
+  86   1              for(i=0;i<8;i++)
+  87   1              {
+  88   2                      sendByte(dat[i]);
+  89   2                      delay(1);
+  90   2              }
+  91   1      }
+  92          void send_cycle_nums_to_phone(uchar command,uint cycle_nums)
+  93          {
+  94   1              uchar dat[8] = {'0'};
+  95   1              uint i = 0;
+  96   1              dat[0] = '$';
+  97   1              dat[1] = '8';
+  98   1              dat[2] = command;
+  99   1              dat[3] = cycle_nums/100 + '0';  
+ 100   1              dat[4] = cycle_nums/10 + '0';
+ 101   1              dat[5] = cycle_nums%10 + '0';
+ 102   1              dat[6] = '0';
+ 103   1              dat[7] = 'F';
+ 104   1              for(i=0;i<8;i++)
+ 105   1              {
+ 106   2                      sendByte(dat[i]);
+ 107   2                      delay(1);       
+ 108   2              }       
+ 109   1      }
+ 110          void send_cycle_time_to_phone(uchar command,uint cycle_time)
+ 111          {
+ 112   1              uchar dat[8] = {'0'};
+ 113   1              uint i = 0;
+ 114   1              dat[0] = '$';
+ 115   1              dat[1] = '8';
+ 116   1              dat[2] = command;
+ 117   1              dat[3] = cycle_time/100 + '0';  
+C51 COMPILER V9.00   UART                                                                  04/09/2016 11:58:53 PAGE 3   
+
+ 118   1              dat[4] = cycle_time/10 + '0';
+ 119   1              dat[5] = cycle_time%10 + '0';
+ 120   1              dat[6] = '0';
+ 121   1              dat[7] = 'F';
+ 122   1              for(i=0;i<8;i++)
+ 123   1              {
+ 124   2                      sendByte(dat[i]);
+ 125   2                      delay(1);       
+ 126   2              }
+ 127   1      }
+ 128          void send_reset_to_phone(uchar command)
+ 129          {
+ 130   1                      uchar dat[8] = {'0'};
+ 131   1              uint i = 0;
+ 132   1              dat[0] = '$';
+ 133   1              dat[1] = '8';
+ 134   1              dat[2] = command;
+ 135   1              dat[3] = '0';   
+ 136   1              dat[4] = '0';
+ 137   1              dat[5] = '0';
+ 138   1              dat[6] = '0';
+ 139   1              dat[7] = 'F';
+ 140   1              for(i=0;i<8;i++)
+ 141   1              {
+ 142   2                      sendByte(dat[i]);
+ 143   2                      delay(1);       
+ 144   2              }       
+ 145   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =     23    ----
-   CONSTANT SIZE    =   ----    ----
+   CODE SIZE        =    728    ----
+   CONSTANT SIZE    =     48    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =      1    ----
+   DATA SIZE        =      1      75
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
 END OF MODULE INFORMATION.

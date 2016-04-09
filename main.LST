@@ -1,4 +1,4 @@
-C51 COMPILER V9.00   MAIN                                                                  03/31/2016 17:14:35 PAGE 1   
+C51 COMPILER V9.00   MAIN                                                                  04/09/2016 11:58:52 PAGE 1   
 
 
 C51 COMPILER V9.00, COMPILATION OF MODULE MAIN
@@ -41,10 +41,10 @@ line level    source
   32          uchar code big_time = 10;//³¤Ê±¼ä
   33          uchar code small_time = 5;//¶ÌÊ±¼ä
   34          
-  35          volatile uchar night_flag = 0;//Ò¹ÍíÄ£Ê½±êÖ¾
-  36          volatile uchar Phone_Set_Finish = 0;//ÊÖ»úÉèÖÃÍê±Ï±ê¼Ç
-  37          //Íâ²¿¹²Ïí±äÁ¿
-  38          extern uchar stop_flag;//½ûÖ¹Í¨ÐÐ±ê¼Ç
+  35          volatile uchar Phone_OK_Finish = 0;//ÊÖ»úÉèÖÃÍê±Ï±ê¼Ç
+  36          //Íâ²¿¹²Ïí±äÁ¿
+  37          extern uchar enter_stop_flag;//½ûÖ¹Í¨ÐÐ±ê¼Ç
+  38          volatile uchar quit_stop_flag = 0;
   39          extern uchar car_flow_detection_flag;
   40          //³µÁ÷Á¿¼ì²â
   41          volatile uint car_num[4] = {0,0,0,0};//0-¶«·½ÏòÉÏµÄ³µÁ÷Á¿
@@ -56,354 +56,354 @@ line level    source
   47          //º¯ÊýÉùÃ÷
   48          void init_register_s52();
   49          void init_Numeric_Display();
-  50          void phone_set();
-  51          
+  50          void phone_remote_set();
+  51          void phone_remote_control();
   52          
-  53          int main()
+  53          void clearFlag()
   54          {
-  55   1              uchar key_num = 17;/*µ±Ç°°´¼üÖµ*/
-C51 COMPILER V9.00   MAIN                                                                  03/31/2016 17:14:35 PAGE 2   
+  55   1              Phone_OK_Finish = 0;
+C51 COMPILER V9.00   MAIN                                                                  04/09/2016 11:58:52 PAGE 2   
 
-  56   1              uint run_red_light_result = 0;/*´³ºìÂÌµÆµÄ½á¹û*/
-  57   1              u32 sou_nor_nums = 0;/* ÄÏ±±·½ÏòÉÏµÄ³µÁ÷Á¿×ÜºÍ*/
-  58   1              u32 eas_wes_nums = 0;/* ¶«Î÷·½ÏòÉÏµÄ³µÁ÷Á¿×ÜºÍ*/
-  59   1              uint cycle_time = 0;/* Ñ­»·ÖÜÆÚµÄÊ±¼ä*/
-  60   1              init_register_s52();
-  61   1              init_max7219();
-  62   1              quit_led();
-  63   1              buzzer();
-  64   1      
-  65   1              while(1)
-  66   1              {        
-  67   2                      /*ÏµÍ³¿ªÊ¼¼ì²âÏµÍ³Ä£Ê½£¬µ±OK¼üÔÚËùÓÐ¼üÒÔ¼°ÊÖ»ú¿ØÖÆÖ®Ç°°´ÏÂÊ±Îª×Ô¶¯Ä£Ê½,Ã¿¸ö·½Ïò¼ÆÊ±20s
-  68   2                       *                                              ·ñÔòÍ¨¹ýÆäËû·½Ê½£¨ÆäËû°´¼ü»òÕßÊÖ»ú¶Ë£©ÉèÖÃºóÔÙ´Î°´ÏÂÏµÍ³Æô¶¯
-  69   2                       *
-  70   2                       *¿ªÊ¼¼ì²â°´¼ü»òÊÖ»úÔ¶³ÌÉèÖÃ
-  71   2                       */
-  72   2                      key_num = scankey();
-  73   2                      if((key_num==OK) || (Phone_Set_Finish==1))//°´¼ü¶ËÖ±½Ó¿ØÖÆ£¬ÏµÍ³ÕýÊ½Æô¶¯ 
-  74   2                      {
-  75   3                              init_led();
-  76   3                              init_Numeric_Display();
-  77   3                              TR0 = 1;
-  78   3                              while(1)
-  79   3                              {
-  80   4                                      /*
-  81   4                                       *½ô¼±Çé¿öÄ£¿é
-  82   4                                       */
-  83   4                                      if(stop_flag==1)//½ô¼±Çé¿ö±ê¼Ç
-  84   4                                      {
-  85   5                                              buzzer();                         
-  86   5                                              all_led_red();
-  87   5                                              while(stop_flag)
-  88   5                                              {
-  89   6                                                      key_num = scankey();
-  90   6                                                      if(OK == key_num)
-  91   6                                                      {
-  92   7                                                              stop_flag = 0;
-  93   7                                                              TR0 = 1;//ÔÙ´ÎÆô¶¯¶¨Ê±Æ÷
-  94   7                                                      }
-  95   6                                              }
-  96   5                                      }
+  56   1              enter_stop_flag = 0;
+  57   1              quit_stop_flag = 0;
+  58   1              car_flow_detection_flag = 0;    
+  59   1      }
+  60          int main()
+  61          {
+  62   1              uchar key_num = 17;/*µ±Ç°°´¼üÖµ*/
+  63   1              uint run_red_light_result = 0;/*´³ºìÂÌµÆµÄ½á¹û*/
+  64   1              uint sou_nor_nums = 0;/* ÄÏ±±·½ÏòÉÏµÄ³µÁ÷Á¿×ÜºÍ*/
+  65   1              uint eas_wes_nums = 0;/* ¶«Î÷·½ÏòÉÏµÄ³µÁ÷Á¿×ÜºÍ*/
+  66   1              uint cycle_time = 0;/* Ñ­»·ÖÜÆÚµÄÊ±¼ä*/
+  67   1              init_register_s52();
+  68   1              init_max7219();
+  69   1              quit_led();
+  70   1              buzzer();
+  71   1              send_reset_to_phone('9'); //ÏÂÎ»»ú¸´Î»
+  72   1              while(1)
+  73   1              {        
+  74   2                      /*ÏµÍ³¿ªÊ¼¼ì²âÏµÍ³Ä£Ê½£¬µ±OK¼üÔÚËùÓÐ¼üÒÔ¼°ÊÖ»ú¿ØÖÆÖ®Ç°°´ÏÂÊ±Îª×Ô¶¯Ä£Ê½,Ã¿¸ö·½Ïò¼ÆÊ±20s
+  75   2                       *                                              ·ñÔòÍ¨¹ýÆäËû·½Ê½£¨ÆäËû°´¼ü»òÕßÊÖ»ú¶Ë£©ÉèÖÃºóÔÙ´Î°´ÏÂÏµÍ³Æô¶¯
+  76   2                       *
+  77   2                       *¿ªÊ¼¼ì²â°´¼ü»òÊÖ»úÔ¶³ÌÉèÖÃ
+  78   2                       */
+  79   2                      key_num = scankey();
+  80   2                      if((key_num==OK) || (Phone_OK_Finish==1))//°´¼ü¶ËÖ±½Ó¿ØÖÆ£¬ÏµÍ³ÕýÊ½Æô¶¯ 
+  81   2                      {
+  82   3                              Phone_OK_Finish = 0;
+  83   3                              init_led();
+  84   3                              init_Numeric_Display();
+  85   3                              clearFlag();
+  86   3                              TR0 = 1;        
+  87   3      
+  88   3                              cycle_time = Sou_Nor_Green_Time + Sou_Nor_Red_Time + Sou_Nor_Yellow_Time + West_East_Yellow_Time;               
+  89   3                              send_cycle_time_to_phone('8',cycle_time);//·¢ËÍÑ­»·Ê±¼ä           
+  90   3                              while(1)
+  91   3                              {
+  92   4                                      
+  93   4                                      /*
+  94   4                                       * ÊÖ»ú¶ËÔ¶³Ì¿ØÖÆÄ£¿é
+  95   4                                       */
+  96   4                                      phone_remote_control();
   97   4                                      /*
-  98   4                                       * ´³ºìµÆ¼ì²âÄ£¿é
+  98   4                                       *½ô¼±Çé¿öÄ£¿é
   99   4                                       */
- 100   4                                       run_red_light_result = run_red_light();
- 101   4                                       if(run_red_light_result != 0)
- 102   4                                       {
- 103   5                                              
- 104   5                                              //½«´³ºìµÆ¾ßÌå·½Î»Êý¾ÝÍ¨¹ý´®¿Ú×ªÀ¶ÑÀ´«ËÍµ½ÊÖ»úÖÕ¶Ë
- 105   5                                              //Êý¾ÝCRC·â×°
- 106   5      
- 107   5                                              //send_run_red_light_to_phone();
- 108   5                                              run_red_light_result = 0;
- 109   5                                              buzzer();
- 110   5                                       }
- 111   4                                      /*
- 112   4                                       * ³µÁ¾¼ì²âÄ£¿é
- 113   4                                       */
- 114   4                                      /*µÃµ½Ã¿¸ö·½ÏòÉÏµÄ³µÁ÷Á¿´¢´æµ½car_numÊý×éÖÐ*/
- 115   4                                      car_flow_detection(car_num);
- 116   4                                      /*¼ÆËãÄÏ±±¡¢¶«Î÷·½ÏòÉÏµÄ³µÁ¾ÊýËãÊýÆ½¾ùÖµ£¬Ä£ÄâÈ¡³öÕûÊýÖµ*/
- 117   4                                      sou_nor_nums = (car_num[1]+car_num[3])/cycle_nums;
-C51 COMPILER V9.00   MAIN                                                                  03/31/2016 17:14:35 PAGE 3   
+ 100   4                                      if(enter_stop_flag == 1)//½ô¼±Çé¿ö±ê¼Ç
+ 101   4                                      {       
+ 102   5                                              TR0 = 0;//½ûÍ£ºó£¬¹Ø±Õ¶¨Ê±Æ÷
+ 103   5                                              buzzer();                         
+ 104   5                                              all_led_red();
+ 105   5                                              while(enter_stop_flag)
+ 106   5                                              {
+ 107   6                                                      key_num = scankey();
+ 108   6                                                      phone_remote_control();
+ 109   6                                                      if((OK==key_num) || (Phone_OK_Finish == 1) || (quit_stop_flag==1))
+ 110   6                                                      {
+ 111   7                                                              enter_stop_flag = 0;
+ 112   7                                                              Phone_OK_Finish = 0;             
+ 113   7                                                              quit_stop_flag = 0;
+ 114   7                                                              TR0 = 1;//ÔÙ´ÎÆô¶¯¶¨Ê±Æ÷
+ 115   7                                                      }
+ 116   6                                              }
+ 117   5                                      }
+C51 COMPILER V9.00   MAIN                                                                  04/09/2016 11:58:52 PAGE 3   
 
- 118   4                                      eas_wes_nums = (car_num[0]+car_num[2])/cycle_nums;
- 119   4                                      /*¼ÆËãÑ­»·ÖÜÆÚµÄÊ±¼äºÍ*/
- 120   4                                      cycle_time = Sou_Nor_Green_Time + Sou_Nor_Red_Time + Sou_Nor_Yellow_Time + West_East_Yellow_Time;
- 121   4                                      /* ¼ÆËã³µÁ÷Á¿*/
- 122   4                                      
- 123   4                                      //½«Á½¸ö·½ÏòÉÏµÄ³µÁ÷Á¿Êý¾ÝÍ¨¹ý´®¿Ú×ªÀ¶ÑÀ´«ËÍµ½ÊÖ»úÖÕ¶Ë
- 124   4                                      //Êý¾ÝCRC·â×°
- 125   4                                      //car_num[0]--[3],sou_nor_nums,eas_wes_nums,cycle_nums£¬cycle_time
- 126   4      
- 127   4                                      //send_car_flow_to_phone(car_num);
- 128   4                                      
- 129   4                                      if(car_flow_detection_flag == 1)
- 130   4                                      { 
- 131   5                                               //Ä£Äâ¸Ä±äÄÏ±±¶«Î÷·½ÏòÉÏµÄºìÂÌµÆÊ±¼ä
- 132   5                                               if(Sou_Nor_Green_Time <= small_time)
- 133   5                                               {
- 134   6                                                      if(sou_nor_nums > 10)//10Á¾
- 135   6                                                              Sou_Nor_Green_Time = big_time;
- 136   6                                                      else
- 137   6                                                              Sou_Nor_Green_Time = small_time;        
- 138   6                                               }
- 139   5                                               else if((Sou_Nor_Green_Time>small_time) && Sou_Nor_Green_Time<=big_time)
- 140   5                                               {
- 141   6                                                      if(sou_nor_nums <= 10)
- 142   6                                                              Sou_Nor_Green_Time = small_time; 
- 143   6                                                      else
- 144   6                                                              Sou_Nor_Green_Time = big_time;
- 145   6                                               }
- 146   5                                               else if(Sou_Nor_Green_Time > big_time)
- 147   5                                               {
- 148   6                                                      if(sou_nor_nums <= 20)
- 149   6                                                              Sou_Nor_Green_Time = small_time; 
- 150   6                                                      else if((sou_nor_nums>20) && (sou_nor_nums <= 40))
- 151   6                                                              Sou_Nor_Green_Time = big_time + 10;
- 152   6                                                      else if((sou_nor_nums>40) && (sou_nor_nums <= 70))
- 153   6                                                              Sou_Nor_Green_Time = big_time + 20;
- 154   6                                                      else
- 155   6                                                              Sou_Nor_Green_Time = 99;
- 156   6                                               }
- 157   5                                               //ÆäËûµÄÕý³£
- 158   5      
- 159   5                                               //Ä£Äâ¸Ä±ä¶«Î÷¶«Î÷·½ÏòÉÏµÄºìÂÌµÆÊ±
- 160   5                                               if(Sou_Nor_Red_Time <= small_time)
- 161   5                                               {
- 162   6                                                      if(eas_wes_nums > 10)//10Á¾
- 163   6                                                              Sou_Nor_Red_Time = big_time;
- 164   6                                                      else
- 165   6                                                              Sou_Nor_Red_Time = small_time;  
- 166   6                                               }
- 167   5                                               else if((Sou_Nor_Red_Time>small_time) && (Sou_Nor_Red_Time<=big_time))
- 168   5                                               {
- 169   6                                                      if(eas_wes_nums <= 10)
- 170   6                                                              Sou_Nor_Red_Time = small_time;
- 171   6                                                      else
- 172   6                                                              Sou_Nor_Red_Time = big_time; 
- 173   6                                               }
- 174   5                                               else if(Sou_Nor_Red_Time > big_time)
- 175   5                                               {
- 176   6                                                      if(eas_wes_nums <= 20)
- 177   6                                                              Sou_Nor_Red_Time = small_time; 
- 178   6                                                      else if((eas_wes_nums>20) && (eas_wes_nums <= 40))
- 179   6                                                              Sou_Nor_Red_Time = big_time + 10;
-C51 COMPILER V9.00   MAIN                                                                  03/31/2016 17:14:35 PAGE 4   
+ 118   4                                      /*
+ 119   4                                       * ´³ºìµÆ¼ì²âÄ£¿é
+ 120   4                                       */
+ 121   4                                       run_red_light_result = run_red_light();
+ 122   4                                       if(run_red_light_result != 0)
+ 123   4                                       {
+ 124   5                                              buzzer();
+ 125   5                                              //½«´³ºìµÆ¾ßÌå·½Î»Êý¾ÝÍ¨¹ý´®¿Ú×ªÀ¶ÑÀ´«ËÍµ½ÊÖ»úÖÕ¶Ë
+ 126   5                                              //Êý¾ÝCRC·â×°
+ 127   5                                              send_run_red_light_to_phone('4',run_red_light_result);
+ 128   5                                              run_red_light_result = 0;
+ 129   5                                       }
+ 130   4                                      /*
+ 131   4                                       * ³µÁ¾¼ì²âÄ£¿é
+ 132   4                                       */
+ 133   4                                      //µÃµ½Ã¿¸ö·½ÏòÉÏµÄ³µÁ÷Á¿´¢´æµ½car_numÊý×éÖÐ
+ 134   4                                      car_flow_detection(car_num);
+ 135   4                                      //¼ÆËãÄÏ±±¡¢¶«Î÷·½ÏòÉÏµÄ³µÁ¾ÊýËãÊýÆ½¾ùÖµ£¬Ä£ÄâÈ¡³öÕûÊýÖµ
+ 136   4                                      sou_nor_nums = (car_num[1]+car_num[3])/cycle_nums;
+ 137   4                                      eas_wes_nums = (car_num[0]+car_num[2])/cycle_nums;
+ 138   4                                      //¼ÆËãÑ­»·ÖÜÆÚµÄÊ±¼äºÍ
+ 139   4                                      cycle_time = Sou_Nor_Green_Time + Sou_Nor_Red_Time + Sou_Nor_Yellow_Time + West_East_Yellow_Time;
+ 140   4                                      //¼ÆËã³µÁ÷Á¿
+ 141   4                                      //??????????
+ 142   4                                      //½«Á½¸ö·½ÏòÉÏµÄ³µÁ÷Á¿Êý¾ÝÍ¨¹ý´®¿Ú×ªÀ¶ÑÀ´«ËÍµ½ÊÖ»úÖÕ¶Ë
+ 143   4                                      //Êý¾ÝCRC·â×°
+ 144   4                                      //sou_nor_nums,eas_wes_nums,cycle_nums£¬cycle_time
+ 145   4                                      
+ 146   4                                      if(car_flow_detection_flag == 1)
+ 147   4                                      { 
+ 148   5                                              //Ò»¸öÑ­»·ÖÜÆÚ·¢ËÍÒ»´Î³µÁ÷Á¿×´Ì¬
+ 149   5                                              send_sou_nor_nums_to_phone('5',sou_nor_nums);
+ 150   5                                              delay(100);
+ 151   5                                              send_eas_wes_nums_to_phone('6',eas_wes_nums); 
+ 152   5                                              delay(100);
+ 153   5                                              send_cycle_nums_to_phone('7',cycle_nums);       
+ 154   5                                              delay(100);
+ 155   5                                              send_cycle_time_to_phone('8',cycle_time);//·¢ËÍÑ­»·Ê±¼ä 
+ 156   5                                              //Ä£Äâ¸Ä±äÄÏ±±¶«Î÷·½ÏòÉÏµÄºìÂÌµÆÊ±¼ä
+ 157   5                                              if(Sou_Nor_Green_Time <= small_time)
+ 158   5                                              {
+ 159   6                                              if(sou_nor_nums > 10)//10Á¾
+ 160   6                                                      Sou_Nor_Green_Time = big_time;
+ 161   6                                              else
+ 162   6                                                      Sou_Nor_Green_Time = small_time;        
+ 163   6                                              }
+ 164   5                                              else if((Sou_Nor_Green_Time>small_time) && Sou_Nor_Green_Time<=big_time)
+ 165   5                                              {
+ 166   6                                              if(sou_nor_nums <= 10)
+ 167   6                                                      Sou_Nor_Green_Time = small_time; 
+ 168   6                                              else
+ 169   6                                                      Sou_Nor_Green_Time = big_time;
+ 170   6                                              }
+ 171   5                                              else if(Sou_Nor_Green_Time > big_time)
+ 172   5                                              {
+ 173   6                                              if(sou_nor_nums <= 20)
+ 174   6                                                      Sou_Nor_Green_Time = small_time; 
+ 175   6                                              else if((sou_nor_nums>20) && (sou_nor_nums <= 40))
+ 176   6                                                      Sou_Nor_Green_Time = big_time + 10;
+ 177   6                                              else if((sou_nor_nums>40) && (sou_nor_nums <= 70))
+ 178   6                                                      Sou_Nor_Green_Time = big_time + 20;
+ 179   6                                              else
+C51 COMPILER V9.00   MAIN                                                                  04/09/2016 11:58:52 PAGE 4   
 
- 180   6                                                      else if((eas_wes_nums>40) && (eas_wes_nums <= 70))
- 181   6                                                              Sou_Nor_Red_Time = big_time + 20;
- 182   6                                                      else
- 183   6                                                              Sou_Nor_Red_Time = 99;
- 184   6                                               } 
- 185   5                                               Sou_Nor_Green_Time_Temp = Sou_Nor_Green_Time;
- 186   5                                               Sou_Nor_Red_Time_Temp = Sou_Nor_Red_Time;
- 187   5      
- 188   5                                               car_flow_detection_flag = 0;//×Ô¶¯Ñ­»·Ä£Ê½±ê¼Ç¼ì²â´¦Àí½áÊø£¬ÖÃÎª0      
- 189   5                                      }
- 190   4                                      if((sou_nor_nums>10000) || (eas_wes_nums>10000))//ÖØÖÃ³µÁ÷Á¿Êý¾Ý£¬²¢½«Ñ­»·´ÎÊýÉèÖÃÎª0
- 191   4                                      {
- 192   5                                              car_num[0] = 0;
- 193   5                                              car_num[1] = 0;
- 194   5                                              car_num[2] = 0;
- 195   5                                              car_num[3] = 0;
- 196   5                                              cycle_nums  = 0;
- 197   5                                      }
- 198   4      
- 199   4                                      /*
- 200   4                                       * ÊÖ»ú¶ËÔ¶³Ì¿ØÖÆÄ£¿é
- 201   4                                       */
- 202   4                                       //phone_set();
- 203   4                              }
- 204   3                      }
- 205   2                      /*
- 206   2                       *      Ê±¼äÊÖ¶¯ÉèÖÃÄ£¿é
- 207   2                       *  1¡¢ÏÂÎ»»ú°´¼üÄ£¿é
- 208   2                       *  2¡¢ÊÖ»ú¶ËÃüÁîÉèÖÃÄ£¿é
- 209   2                       */
- 210   2                      //OK¼üÃ»ÓÐ°´ÏÂ£¬´ËÊ±ÊÇÓÃ»§×Ô¼ºÉèÖÃ¸÷·½ÏòµÄºì»ÆÂÌµÆÊ±¼ä,ÐÞ¸ÄµÄÊÇ¶ÔÓ¦·½ÏòÉÏµÄÂÌµÆÊ±¼ä
- 211   2                      //1¡¢ÏÂÎ»»ú°´¼üÄ£¿é
- 212   2                      if(key_num == SET_SOU_NOR_TIME)//ÉèÖÃÄÏ±±·½ÏòÂÌµÆÊ±¼ä
- 213   2                      {
- 214   3                              wr_max7219(Addr_Digit2,0x00);    
- 215   3                              wr_max7219(Addr_Digit3,0x00);   
- 216   3                              set_time(1);//ÄÏ±±      
- 217   3                      }
- 218   2                      if(key_num == SET_WEST_EAST_TIME)
- 219   2                      {
- 220   3                              wr_max7219(Addr_Digit0,0x00);    
- 221   3                              wr_max7219(Addr_Digit1,0x00);                           
- 222   3                              set_time(2);
- 223   3                      }
- 224   2                      //2¡¢ÊÖ»ú¶ËÃüÁîÉèÖÃÄ£¿é
- 225   2                      phone_set();
- 226   2              }
- 227   1              return 0;
- 228   1      }
- 229          
- 230          /*
- 231           * ÊÖ»ú¶Ë
- 232           */
- 233          void phone_set()
- 234          {
- 235   1              uint i;
- 236   1              switch(uartState)
- 237   1              {
- 238   2                      case UART_IDLE://´®¿ÚÎ´ÓÐÊý¾Ý×´Ì¬
+ 180   6                                                      Sou_Nor_Green_Time = 99;
+ 181   6                                              }
+ 182   5                                              //ÆäËûµÄÕý³£
+ 183   5                                              
+ 184   5                                              //Ä£Äâ¸Ä±ä¶«Î÷¶«Î÷·½ÏòÉÏµÄºìÂÌµÆÊ±
+ 185   5                                              if(Sou_Nor_Red_Time <= small_time)
+ 186   5                                              {
+ 187   6                                              if(eas_wes_nums > 10)//10Á¾
+ 188   6                                                      Sou_Nor_Red_Time = big_time;
+ 189   6                                              else
+ 190   6                                                      Sou_Nor_Red_Time = small_time;  
+ 191   6                                              }
+ 192   5                                              else if((Sou_Nor_Red_Time>small_time) && (Sou_Nor_Red_Time<=big_time))
+ 193   5                                              {
+ 194   6                                              if(eas_wes_nums <= 10)
+ 195   6                                                      Sou_Nor_Red_Time = small_time;
+ 196   6                                              else
+ 197   6                                                      Sou_Nor_Red_Time = big_time; 
+ 198   6                                              }
+ 199   5                                              else if(Sou_Nor_Red_Time > big_time)
+ 200   5                                              {
+ 201   6                                              if(eas_wes_nums <= 20)
+ 202   6                                                      Sou_Nor_Red_Time = small_time; 
+ 203   6                                              else if((eas_wes_nums>20) && (eas_wes_nums <= 40))
+ 204   6                                                      Sou_Nor_Red_Time = big_time + 10;
+ 205   6                                              else if((eas_wes_nums>40) && (eas_wes_nums <= 70))
+ 206   6                                                      Sou_Nor_Red_Time = big_time + 20;
+ 207   6                                              else
+ 208   6                                                      Sou_Nor_Red_Time = 99;
+ 209   6                                              } 
+ 210   5                                              Sou_Nor_Green_Time_Temp = Sou_Nor_Green_Time;
+ 211   5                                              Sou_Nor_Red_Time_Temp = Sou_Nor_Red_Time;
+ 212   5                                              
+ 213   5                                              car_flow_detection_flag = 0;//×Ô¶¯Ñ­»·Ä£Ê½±ê¼Ç¼ì²â´¦Àí½áÊø£¬ÖÃª0        
+ 214   5                                      }
+ 215   4                                      if((sou_nor_nums>999) || (eas_wes_nums>999))//ÖØÖÃ³µÁ÷Á¿Êý¾Ý£¬²¢½«Ñ­»·´ÎÊýÉèÖÃÎª0
+ 216   4                                      {
+ 217   5                                              car_num[0] = 0;
+ 218   5                                              car_num[1] = 0;
+ 219   5                                              car_num[2] = 0;
+ 220   5                                              car_num[3] = 0;
+ 221   5                                              cycle_nums  = 0;
+ 222   5                                      }
+ 223   4                              }
+ 224   3                      }
+ 225   2                      /*
+ 226   2                       *      Ê±¼äÊÖ¶¯ÉèÖÃÄ£¿é
+ 227   2                       *  1¡¢ÏÂÎ»»ú°´¼üÄ£¿é
+ 228   2                       *  2¡¢ÊÖ»ú¶ËÃüÁîÉèÖÃÄ£¿é
+ 229   2                       */
+ 230   2                      //OK¼üÃ»ÓÐ°´ÏÂ£¬´ËÊ±ÊÇÓÃ»§×Ô¼ºÉèÖÃ¸÷·½ÏòµÄºì»ÆÂÌµÆÊ±¼ä,ÐÞ¸ÄµÄÊÇ¶ÔÓ¦·½ÏòÉÏµÄÂÌµÆÊ±¼ä
+ 231   2                      //1¡¢ÏÂÎ»»ú°´¼üÄ£¿é
+ 232   2                      if(key_num == SET_SOU_NOR_TIME)//ÉèÖÃÄÏ±±·½ÏòÂÌµÆÊ±¼ä
+ 233   2                      {
+ 234   3                              wr_max7219(Addr_Digit2,0x00);    
+ 235   3                              wr_max7219(Addr_Digit3,0x00);   
+ 236   3                              set_time(1);//ÄÏ±±      
+ 237   3                      }
+ 238   2                      if(key_num == SET_WEST_EAST_TIME)
  239   2                      {
- 240   3                              pointer = 0;
- 241   3                              timeout = 0;
-C51 COMPILER V9.00   MAIN                                                                  03/31/2016 17:14:35 PAGE 5   
+ 240   3                              wr_max7219(Addr_Digit0,0x00);    
+ 241   3                              wr_max7219(Addr_Digit1,0x00);                           
+C51 COMPILER V9.00   MAIN                                                                  04/09/2016 11:58:52 PAGE 5   
 
- 242   3                              g_cCommand = 0;
- 243   3                              if(checkByte())  
- 244   3                              {  
- 245   4                                      recieve_Buf[pointer++] = getByte();   
- 246   4                                      uartState = UART_RECEIVE;
- 247   4                              }
- 248   3                              break;
- 249   3                      }
- 250   2                      case UART_RECEIVE:
- 251   2                      {
- 252   3                              timeout++;
- 253   3      //                      if ((timeout>0x8000) || (recieve_Buf[(pointer-1)]==0XEF) || (pointer>7) || (pointer >= recieve_Buf[0]
-             -))//[0]±íÊ¾Êý¾Ý³¤¶È
- 254   3      //                      {
- 255   3      //                              uartState = UART_PROCESS; 
- 256   3      //                              break;
- 257   3      //                      }
- 258   3                              if ((timeout>0x8000) || (recieve_Buf[(pointer-1)]=='F') || (pointer>7) || (pointer >= recieve_Buf[0]))/
-             -/[0]±íÊ¾Êý¾Ý³¤¶È
- 259   3                              {
- 260   4                                      uartState = UART_PROCESS; 
- 261   4                                      break;
- 262   4                              }
+ 242   3                              set_time(2);
+ 243   3                      }
+ 244   2                      //2¡¢ÊÖ»ú¶ËÃüÁîÉèÖÃÄ£¿é
+ 245   2                      phone_remote_control();
+ 246   2              }
+ 247   1              return 0;
+ 248   1      }
+ 249          
+ 250          /*
+ 251           * ÊÖ»ú¶Ë
+ 252           */
+ 253          void phone_remote_control()     
+ 254          {
+ 255   1              uint i;
+ 256   1              switch(uartState)
+ 257   1              {
+ 258   2                      case UART_IDLE://´®¿ÚÎ´ÓÐÊý¾Ý×´Ì¬
+ 259   2                      {
+ 260   3                              pointer = 0;
+ 261   3                              timeout = 0;
+ 262   3                              g_cCommand = 0;
  263   3                              if(checkByte())  
- 264   3                              {
- 265   4                                      recieve_Buf[pointer++] = getByte();
- 266   4                                      timeout = 0;
- 267   4                                      uartState = UART_RECEIVE;
- 268   4                              }
- 269   3                              break;
- 270   3                      }
- 271   2                      case UART_PROCESS:
- 272   2                      {
- 273   3                              for(i=0; i<pointer;i++)
+ 264   3                              {  
+ 265   4                                      recieve_Buf[pointer++] = getByte();   
+ 266   4                                      uartState = UART_RECEIVE;
+ 267   4                              }
+ 268   3                              break;
+ 269   3                      }
+ 270   2                      case UART_RECEIVE:
+ 271   2                      {
+ 272   3                              timeout++;
+ 273   3                              if ((timeout>0x8000) || (recieve_Buf[(pointer-1)]=='F') || (pointer>7) || (pointer >= (recieve_Buf[1])-
+             -'0'))//[0]±íÊ¾Êý¾Ý³¤¶È
  274   3                              {
- 275   4                                      sendByte(recieve_Buf[i]);
- 276   4                                      delay(1);
+ 275   4                                      uartState = UART_PROCESS; 
+ 276   4                                      break;
  277   4                              }
- 278   3                              //½«ÊÖ»ú¶Ë½ÓÊÕµ½µÄ×Ö·û´®×ª»»Îª16½øÖÆ
- 279   3                              uartState = UART_IDLE;
- 280   3                              g_cCommand = recieve_Buf[1] ; //È¡³ö¹¦ÄÜÃüÁî×Ö
- 281   3      //                                      i =     g_cReceBuf[0]-2;
- 282   3      //                                      CRCdata = CRC16(g_cReceBuf,i);//½øÐÐCRCÑ­»·Ð£Ñé
- 283   3      
- 284   3                              if((timeout<0x8000)/* && (CRCdata==(u16)(g_cReceBuf[i]<<8)+g_cReceBuf[i+1])*/ )
- 285   3                              {
- 286   4                                      switch(g_cCommand)
- 287   4                                      {
- 288   5                                              case '1'://ÉèÖÃÊ±¼ä
- 289   5                                              {
- 290   6                                                      if(recieve_Buf[2] == '1')//ÉèÖÃÄÏ±±ÂÌµÆÊ±¼ä
- 291   6                                                      {                                               
- 292   7                                                              Sou_Nor_Green_Time = recieve_Buf[3] - '0';//×Ö·ûµÄASCII
- 293   7                                                              Sou_Nor_Green_Time_Temp =  Sou_Nor_Green_Time;
- 294   7                                                              wr_max7219(Addr_Digit0,max7219_7led_code[Sou_Nor_Green_Time_Temp/10]);   
- 295   7                                                              wr_max7219(Addr_Digit1,max7219_7led_code[Sou_Nor_Green_Time_Temp%10]);
- 296   7                                                      }
- 297   6                                                      if(recieve_Buf[2] == '2')//ÉèÖÃ¶«Î÷ÂÌµÆÊ±¼ä
- 298   6                                                      {                                                       
- 299   7                                                              Sou_Nor_Red_Time = recieve_Buf[3] - '0';
- 300   7                                                              Sou_Nor_Red_Time_Temp =  Sou_Nor_Red_Time;
- 301   7                                                              wr_max7219(Addr_Digit2,max7219_7led_code[Sou_Nor_Green_Time_Temp/10]);   
-C51 COMPILER V9.00   MAIN                                                                  03/31/2016 17:14:35 PAGE 6   
+ 278   3                              if(checkByte())  
+ 279   3                              {
+ 280   4                                      recieve_Buf[pointer++] = getByte();
+ 281   4                                      timeout = 0;
+ 282   4                                      uartState = UART_RECEIVE;
+ 283   4                              }
+ 284   3                              break;
+ 285   3                      }
+ 286   2                      case UART_PROCESS:
+ 287   2                      {
+ 288   3                              //½«ÊÖ»ú¶Ë½ÓÊÕµ½µÄ×Ö·û´®×ª»»Îª16½øÖÆ
+ 289   3                              uartState = UART_IDLE; 
+ 290   3      
+ 291   3                              for(i=0; i<pointer;i++)
+ 292   3                              {
+ 293   4                                      sendByte(recieve_Buf[i]);
+ 294   4                                      delay(1);
+ 295   4                              }
+ 296   3      
+ 297   3                              g_cCommand = recieve_Buf[2] ; //È¡³ö¹¦ÄÜÃüÁî×Ö
+ 298   3      //                                      i =     g_cReceBuf[0]-2;
+ 299   3      //                                      CRCdata = CRC16(g_cReceBuf,i);//½øÐÐCRCÑ­»·Ð£Ñé
+ 300   3      
+ 301   3                              if((timeout<0x8000) && (recieve_Buf[0]=='$')/* && (CRCdata==(u16)(g_cReceBuf[i]<<8)+g_cReceBuf[i+1])*/ 
+             -)
+C51 COMPILER V9.00   MAIN                                                                  04/09/2016 11:58:52 PAGE 6   
 
- 302   7                                                              wr_max7219(Addr_Digit3,max7219_7led_code[Sou_Nor_Green_Time_Temp%10]);
- 303   7                                                      }       
- 304   6                                                      break;
- 305   6                                              }
- 306   5                                              case '2'://½ûÖ¹Í¨ÐÐ
- 307   5                                                      stop_flag = 1;
- 308   5                                                      break;
- 309   5                                              case '3'://Ò¹ÍíÄ£Ê½
- 310   5                                                      night_flag = 1;
- 311   5                                                      break;
- 312   5                                              case '4'://ÊÖ»úÈ·ÈÏÉèÖÃÍê±Ï
- 313   5                                                      Phone_Set_Finish = 1;
- 314   5                                                      break;
- 315   5                                      }
- 316   4                              }
- 317   3                              break;
- 318   3                      }
- 319   2              } 
- 320   1      }
- 321          
- 322          /*
- 323           *³õÊ¼»¯52µ¥Æ¬»úµÄ¼Ä´æÆ÷£¬Íâ²¿ÖÐ¶Ï£¬¶¨Ê±Æ÷£¬ÒÔ¼°ÏàÒÀÓÅÏÈ¼¶µÈ
- 324           */
- 325          void init_register_s52()
- 326          {       
- 327   1              //CPU²éÑ¯ÖÐ¶ÏµÄË³Ðò£¨INT0->T0->INT1->TI/RI->T2£©
- 328   1              IE = 0X97;//´ò¿ªÏàÓ¦ÖÐ¶Ï((EA(×Ü¿ª¹Ø)-1))--(²»ÓÃ-0)--(T2-0)--(´®ÐÐ¿Ú-1)
- 329   1                                                       //--(T1-0)--(INT1-1)--(T0-1)--(INT0-1))
- 330   1              TMOD = 0X21;//T1·½Ê½2£¬T0·½Ê½1ÉèÖÃ£¨GATE-C/T-M1-M0--GATE-C/T-M1-M0£©
- 331   1              IT0 = 1;//INT0ÏÂ½µÑØÓÐÐ§
- 332   1              IT1 = 1;//ÏÂ½µÑØÓÐÐ§
- 333   1              TL1 = 0XFD;
- 334   1              TH0 = 0X4C;//¶¨Ê±Æ÷
- 335   1              TL0 = 0X00;
- 336   1              //TR0 = 1;//Æô¶¯¶¨Ê±Æ÷
- 337   1              
- 338   1              TH1 = 0XFD;//²¨ÌØÂÊ9600,SMOD²»¼Ó±¶
- 339   1              TL1 = 0XFD;
- 340   1              TR1 = 1;//Æô¶¯T1
- 341   1              SCON = 0X50;//´®¿Ú·½Ê½£¬·½Ê½1£¬ÔÊÐí½ÓÊÕ
- 342   1      
- 343   1              PS = 1; //´®ÐÐ¿ÚÓÅÏÈ¼¶
- 344   1              PX0 = 1; 
- 345   1              PX1 = 1;//INT1ÖÐ¶ÏÓÅÏÈ¼¶
- 346   1              //IP = 0X21;//(²»ÓÃ-²»ÓÃ-T2-´®ÐÐ¿Ú-T1-INT1-T0-INT0)
- 347   1              Sou_Nor_Red_Time_Temp = Sou_Nor_Red_Time;
- 348   1              Sou_Nor_Green_Time_Temp = Sou_Nor_Green_Time;
- 349   1      }
- 350          
- 351          /*
- 352           *³õÊ¼»¯ÊýÂë¹ÜÏÔÊ¾Êý×Ö,ÒÔÄÏ±±Îª»ù×¼ÏÔÊ¾£¬Ò²¾ÍÊÇÏÔÊ¾µÄÊÇµ±Ç°ÄÏ±±Í¨ÐÐÊ±ÂÌµÆÊ±¼ä
- 353           */
- 354          void init_Numeric_Display()
- 355          {
- 356   1              wr_max7219(Addr_Digit0,max7219_7led_code[Sou_Nor_Green_Time_Temp/10]);   
- 357   1              wr_max7219(Addr_Digit1,max7219_7led_code[Sou_Nor_Green_Time_Temp%10]);
- 358   1              wr_max7219(Addr_Digit2,max7219_7led_code[Sou_Nor_Green_Time_Temp/10]);   
- 359   1              wr_max7219(Addr_Digit3,max7219_7led_code[Sou_Nor_Green_Time_Temp%10]);
- 360   1      }
- 361          
- 362          
- 363          
-C51 COMPILER V9.00   MAIN                                                                  03/31/2016 17:14:35 PAGE 7   
+ 302   3                              {
+ 303   4                                      switch(g_cCommand)
+ 304   4                                      {
+ 305   5                                              
+ 306   5                                              case '0'://ÊÖ»úÈ·ÈÏÉèÖÃÍê±Ï
+ 307   5                                                      Phone_OK_Finish = 1; 
+ 308   5                                                      buzzer();         
+ 309   5                                                      break;
+ 310   5                                              case '1'://ÉèÖÃÊ±¼ä
+ 311   5                                              {
+ 312   6                                                      if(recieve_Buf[3] == '1')//ÉèÖÃÄÏ±±ÂÌµÆÊ±¼ä
+ 313   6                                                      {                                               
+ 314   7                                                              Sou_Nor_Green_Time = (recieve_Buf[4] - '0')*10 + (recieve_Buf[5] - '0');//×Ö·ûµÄASCII
+ 315   7                                                              Sou_Nor_Green_Time_Temp =  Sou_Nor_Green_Time;
+ 316   7                                                              wr_max7219(Addr_Digit0,max7219_7led_code[Sou_Nor_Green_Time_Temp/10]);   
+ 317   7                                                              wr_max7219(Addr_Digit1,max7219_7led_code[Sou_Nor_Green_Time_Temp%10]);
+ 318   7                                                      }
+ 319   6                                                      if(recieve_Buf[3] == '2')//ÉèÖÃ¶«Î÷ÂÌµÆÊ±¼ä
+ 320   6                                                      {                                                        
+ 321   7                                                              Sou_Nor_Red_Time = (recieve_Buf[4] - '0')*10 + (recieve_Buf[5] - '0');
+ 322   7                                                              Sou_Nor_Red_Time_Temp =  Sou_Nor_Red_Time;
+ 323   7                                                              wr_max7219(Addr_Digit2,max7219_7led_code[Sou_Nor_Red_Time_Temp/10]);     
+ 324   7                                                              wr_max7219(Addr_Digit3,max7219_7led_code[Sou_Nor_Red_Time_Temp%10]);
+ 325   7                                                      }
+ 326   6                                                      buzzer();       
+ 327   6                                                      break;
+ 328   6                                              }
+ 329   5                                              case '2'://½ûÖ¹Í¨ÐÐ
+ 330   5                                                      enter_stop_flag = 1;
+ 331   5                                                      buzzer();
+ 332   5                                                      break;
+ 333   5                                              case '3'://¿ªÆôÍ¨ÐÐ
+ 334   5                                                      quit_stop_flag = 1;
+ 335   5                                                      buzzer();
+ 336   5                                                      break;
+ 337   5                                              default:
+ 338   5                                                      break;
+ 339   5                                      }
+ 340   4                              }
+ 341   3                              break;
+ 342   3                      }
+ 343   2              } 
+ 344   1      }
+ 345          /*
+ 346           *³õÊ¼»¯52µ¥Æ¬»úµÄ¼Ä´æÆ÷£¬Íâ²¿ÖÐ¶Ï£¬¶¨Ê±Æ÷£¬ÒÔ¼°ÏàÒÀÓÅÏÈ¼¶µÈ
+ 347           */
+ 348          void init_register_s52()
+ 349          {       
+ 350   1              //CPU²éÑ¯ÖÐ¶ÏµÄË³Ðò£¨INT0->T0->INT1->TI/RI->T2£©
+ 351   1              IE = 0X97;//´ò¿ªÏàÓ¦ÖÐ¶Ï((EA(×Ü¿ª¹Ø)-1))--(²»ÓÃ-0)--(T2-0)--(´®ÐÐ¿Ú-1)
+ 352   1                                                       //--(T1-0)--(INT1-1)--(T0-1)--(INT0-1))
+ 353   1              TMOD = 0X21;//T1·½Ê½2£¬T0·½Ê½1ÉèÖÃ£¨GATE-C/T-M1-M0--GATE-C/T-M1-M0£©
+ 354   1              IT0 = 1;//INT0ÏÂ½µÑØÓÐÐ§
+ 355   1              IT1 = 1;//ÏÂ½µÑØÓÐÐ§
+ 356   1              TL1 = 0XFD;
+ 357   1              TH0 = 0X4C;//¶¨Ê±Æ÷
+ 358   1              TL0 = 0X00;
+ 359   1              //TR0 = 1;//Æô¶¯¶¨Ê±Æ÷
+ 360   1              
+ 361   1              TH1 = 0XFD;//²¨ÌØÂÊ9600,SMOD²»¼Ó±¶
+ 362   1              TL1 = 0XFD;
+ 363   1              TR1 = 1;//Æô¶¯T1
+C51 COMPILER V9.00   MAIN                                                                  04/09/2016 11:58:52 PAGE 7   
 
- 364          
- 365          
- 366          
- 367          
- 368          
- 369          
- 370          
- 371          
- 372          
+ 364   1              SCON = 0X50;//´®¿Ú·½Ê½£¬·½Ê½1£¬ÔÊÐí½ÓÊÕ
+ 365   1      
+ 366   1              PS = 1; //´®ÐÐ¿ÚÓÅÏÈ¼¶
+ 367   1              PX0 = 1; 
+ 368   1              PX1 = 1;//INT1ÖÐ¶ÏÓÅÏÈ¼¶
+ 369   1              //IP = 0X21;//(²»ÓÃ-²»ÓÃ-T2-´®ÐÐ¿Ú-T1-INT1-T0-INT0)
+ 370   1              Sou_Nor_Red_Time_Temp = Sou_Nor_Red_Time;
+ 371   1              Sou_Nor_Green_Time_Temp = Sou_Nor_Green_Time;
+ 372   1      }
  373          
- 374          
- 375          
- 376          
- 377          
- 378          
- 379          
- 380          
- 381          
- 382          
- 383          
+ 374          /*
+ 375           *³õÊ¼»¯ÊýÂë¹ÜÏÔÊ¾Êý×Ö,ÒÔÄÏ±±Îª»ù×¼ÏÔÊ¾£¬Ò²¾ÍÊÇÏÔÊ¾µÄÊÇµ±Ç°ÄÏ±±Í¨ÐÐÊ±ÂÌµÆÊ±¼ä
+ 376           */
+ 377          void init_Numeric_Display()
+ 378          {
+ 379   1              wr_max7219(Addr_Digit0,max7219_7led_code[Sou_Nor_Green_Time_Temp/10]);   
+ 380   1              wr_max7219(Addr_Digit1,max7219_7led_code[Sou_Nor_Green_Time_Temp%10]);
+ 381   1              wr_max7219(Addr_Digit2,max7219_7led_code[Sou_Nor_Green_Time_Temp/10]);   
+ 382   1              wr_max7219(Addr_Digit3,max7219_7led_code[Sou_Nor_Green_Time_Temp%10]);
+ 383   1      }
  384          
  385          
  386          
@@ -425,82 +425,107 @@ line level    source
  402          
  403          
  404          
- 405          /*
- 406           *½«ËùÓÐÓÃIO¿ÚÀ©Õ¹µÄ°´¼üÈ«²¿Çå³ý£¬ÖÃÎª¸ßµçÆ½
- 407           */
- 408          //void remove_key()
- 409          //{
- 410          //      West_East_Add_Button = 1;
- 411          //      Sou_Nor_Add_Button = 1;
- 412          //      SUB_TIME = 1;
- 413          //      OK = 1;
- 414          //}
- 415          /*
- 416           *ÊÖ¶¯¿ØÖÆÄ£Ê½ÏÂ£ºÉèÖÃÄÏ±±ÂÌµÆÊ±¼ä
- 417           */
- 418          //uchar set_sou_nor_time()
- 419          //{
- 420          //      uchar count = 20;
- 421          //      while(1)
- 422          //      {
- 423          //              if(Sou_Nor_Add_Button==0)
- 424          //              {
- 425          //                      buzzer();
-C51 COMPILER V9.00   MAIN                                                                  03/31/2016 17:14:35 PAGE 8   
+ 405          
+ 406          
+ 407          
+ 408          
+ 409          
+ 410          
+ 411          
+ 412          
+ 413          
+ 414          
+ 415          
+ 416          
+ 417          
+ 418          
+ 419          
+ 420          
+ 421          
+ 422          
+ 423          
+ 424          
+ 425          
+C51 COMPILER V9.00   MAIN                                                                  04/09/2016 11:58:52 PAGE 8   
 
- 426          //                      count++;                        
- 427          //              }
- 428          //              if(SUB_TIME==0)
- 429          //              {
- 430          //                      buzzer();  
- 431          //                      count--;
- 432          //              }
- 433          //              if(OK == 0)
- 434          //              {
- 435          //                      delay(100);
- 436          //                      buzzer(); 
- 437          //                      break;
- 438          //              }
- 439          //              remove_key();
- 440          //              
- 441          //      }
- 442          //}
- 443          /*
- 444           *ÊÖ¶¯¿ØÖÆÄ£Ê½ÏÂ£ºÉèÖÃ¶«Î÷ÂÌµÆÊ±¼ä
- 445           */
- 446          //uchar set_west_east_time()
- 447          //{
- 448          //      uchar count = 20;
- 449          //      while(1)         
- 450          //      {
- 451          //              if(West_East_Add_Button==0)
+ 426          
+ 427          
+ 428          /*
+ 429           *½«ËùÓÐÓÃIO¿ÚÀ©Õ¹µÄ°´¼üÈ«²¿Çå³ý£¬ÖÃÎª¸ßµçÆ½
+ 430           */
+ 431          //void remove_key()
+ 432          //{
+ 433          //      West_East_Add_Button = 1;
+ 434          //      Sou_Nor_Add_Button = 1;
+ 435          //      SUB_TIME = 1;
+ 436          //      OK = 1;
+ 437          //}
+ 438          /*
+ 439           *ÊÖ¶¯¿ØÖÆÄ£Ê½ÏÂ£ºÉèÖÃÄÏ±±ÂÌµÆÊ±¼ä
+ 440           */
+ 441          //uchar set_sou_nor_time()
+ 442          //{
+ 443          //      uchar count = 20;
+ 444          //      while(1)
+ 445          //      {
+ 446          //              if(Sou_Nor_Add_Button==0)
+ 447          //              {
+ 448          //                      buzzer();
+ 449          //                      count++;                        
+ 450          //              }
+ 451          //              if(SUB_TIME==0)
  452          //              {
- 453          //                      buzzer(); 
- 454          //                      count++;
+ 453          //                      buzzer();  
+ 454          //                      count--;
  455          //              }
- 456          //              if(SUB_TIME==0)
+ 456          //              if(OK == 0)
  457          //              {
- 458          //                      buzzer();
- 459          //                      count--;
- 460          //              }
- 461          //              if(OK == 0)
- 462          //              {
- 463          //                      delay(100);
- 464          //                      buzzer();
- 465          //                      break;
- 466          //              }
- 467          //              remove_key();
- 468          //      }
- 469          //      return count;   
- 470          //}
+ 458          //                      delay(100);
+ 459          //                      buzzer(); 
+ 460          //                      break;
+ 461          //              }
+ 462          //              remove_key();
+ 463          //              
+ 464          //      }
+ 465          //}
+ 466          /*
+ 467           *ÊÖ¶¯¿ØÖÆÄ£Ê½ÏÂ£ºÉèÖÃ¶«Î÷ÂÌµÆÊ±¼ä
+ 468           */
+ 469          //uchar set_west_east_time()
+ 470          //{
+ 471          //      uchar count = 20;
+ 472          //      while(1)         
+ 473          //      {
+ 474          //              if(West_East_Add_Button==0)
+ 475          //              {
+ 476          //                      buzzer(); 
+ 477          //                      count++;
+ 478          //              }
+ 479          //              if(SUB_TIME==0)
+ 480          //              {
+ 481          //                      buzzer();
+ 482          //                      count--;
+ 483          //              }
+ 484          //              if(OK == 0)
+ 485          //              {
+ 486          //                      delay(100);
+ 487          //                      buzzer();
+C51 COMPILER V9.00   MAIN                                                                  04/09/2016 11:58:52 PAGE 9   
+
+ 488          //                      break;
+ 489          //              }
+ 490          //              remove_key();
+ 491          //      }
+ 492          //      return count;   
+ 493          //}
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =   1258    ----
+   CODE SIZE        =   1307    ----
    CONSTANT SIZE    =      2    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =     54      15
+   DATA SIZE        =     54      11
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
 END OF MODULE INFORMATION.

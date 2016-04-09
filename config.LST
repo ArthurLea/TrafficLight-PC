@@ -1,4 +1,4 @@
-C51 COMPILER V9.00   CONFIG                                                                03/31/2016 17:14:36 PAGE 1   
+C51 COMPILER V9.00   CONFIG                                                                04/09/2016 11:58:53 PAGE 1   
 
 
 C51 COMPILER V9.00, COMPILATION OF MODULE CONFIG
@@ -8,7 +8,7 @@ COMPILER INVOKED BY: E:\Single-Chip-Microcomputer\Keil\C51\BIN\C51.EXE config.c 
 line level    source
 
    1          #include "config.h"
-   2                   
+   2          #include <string.h>      
    3          /* CRC 高位字节值表 */ 
    4          uchar code auchCRCHi[256] = { 
    5          0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 
@@ -62,7 +62,7 @@ line level    source
   53          0x70, 0xB0, 0x50, 0x90, 0x91, 0x51, 0x93, 0x53, 0x52, 0x92, 
   54          0x96, 0x56, 0x57, 0x97, 0x55, 0x95, 0x94, 0x54, 0x9C, 0x5C, 
   55          0x5D, 0x9D, 0x5F, 0x9F, 0x9E, 0x5E, 0x5A, 0x9A, 0x9B, 0x5B, 
-C51 COMPILER V9.00   CONFIG                                                                03/31/2016 17:14:36 PAGE 2   
+C51 COMPILER V9.00   CONFIG                                                                04/09/2016 11:58:53 PAGE 2   
 
   56          0x99, 0x59, 0x58, 0x98, 0x88, 0x48, 0x49, 0x89, 0x4B, 0x8B, 
   57          0x8A, 0x4A, 0x4E, 0x8E, 0x8F, 0x4F, 0x8D, 0x4D, 0x4C, 0x8C, 

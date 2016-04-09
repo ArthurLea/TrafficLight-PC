@@ -2,7 +2,6 @@
 #define _CONFIG_H_
 
 	#include <reg52.h>
-
 	typedef unsigned char uchar; //#define uchar unsigned char
 	typedef unsigned int uint; //#define uint unsigned int	
 	typedef unsigned short ushort;

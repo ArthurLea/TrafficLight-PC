@@ -52,7 +52,6 @@ void all_led_red()
 	East_West_Footway_Red = 1;	
 	East_West_Footway_Green = 0;
 }
-
 //数码管的显示
 void numeric_led_display(uint flag)
 {

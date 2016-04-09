@@ -1,4 +1,4 @@
-C51 COMPILER V9.00   INFRARED_TUBE                                                         03/31/2016 17:14:36 PAGE 1   
+C51 COMPILER V9.00   INFRARED_TUBE                                                         04/09/2016 11:58:53 PAGE 1   
 
 
 C51 COMPILER V9.00, COMPILATION OF MODULE INFRARED_TUBE
@@ -62,7 +62,7 @@ line level    source
   53   3                              delay(100);//延时100ms
   54   3                              if(INFRARED_E == 0)
   55   3                                      return W_TO_E;
-C51 COMPILER V9.00   INFRARED_TUBE                                                         03/31/2016 17:14:36 PAGE 2   
+C51 COMPILER V9.00   INFRARED_TUBE                                                         04/09/2016 11:58:53 PAGE 2   
 
   56   3                              if(INFRARED_N == 0)
   57   3                                      return W_TO_N;
@@ -126,7 +126,7 @@ line level    source
  115   1              //表示东西可以通行，此时东-》西，东-》南---向东方向有车
  116   1              //                                              西-》东，西-》北---向西方向有车
  117   1              
-C51 COMPILER V9.00   INFRARED_TUBE                                                         03/31/2016 17:14:36 PAGE 3   
+C51 COMPILER V9.00   INFRARED_TUBE                                                         04/09/2016 11:58:53 PAGE 3   
 
  118   1              if(e_w_stop_flag == 0)
  119   1              {
@@ -190,7 +190,7 @@ line level    source
  177   1              //将四个方向上的数据储存
  178   1              if((TR0==1) && (car_flow_detection_flag==0))//表示现在处于一个循环模式下,并没有进行车流量的判断
  179   1              {
-C51 COMPILER V9.00   INFRARED_TUBE                                                         03/31/2016 17:14:36 PAGE 4   
+C51 COMPILER V9.00   INFRARED_TUBE                                                         04/09/2016 11:58:53 PAGE 4   
 
  180   2                      //东西南北车辆数目存储
  181   2                      num[0] +=  nums_from_eas;

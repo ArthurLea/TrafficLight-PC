@@ -12,7 +12,7 @@ extern volatile uchar Sou_Nor_Red_Time_Temp;
 extern volatile uchar Sou_Nor_Green_Time_Temp;
 //系统在自动模式下
 //volatile uchar befor_stop_led_state = 0;//0表示南北红，1表示南北黄，2表示南北绿
-volatile uchar stop_flag = 0;//紧急按钮标记，1表示已经触发
+volatile uchar enter_stop_flag = 0;//紧急按钮标记，1表示已经触发
 volatile uchar car_flow_detection_flag = 0;//自动模式下循环一次（南北绿灯-南北黄灯-南北红灯-南北绿灯），
 								  //置为1，检测车流量
 //闯红灯标志								  
@@ -59,7 +59,7 @@ void display()
 			West_East_Yellow_Time--;	
 		}
 		//重新计数
-		if(Sou_Nor_Green_Time_Temp==0XFF && Sou_Nor_Yellow_Time==0XFF && Sou_Nor_Red_Time_Temp==0XFF && West_East_Yellow_Time==0XFF)
+		if((Sou_Nor_Green_Time_Temp==0XFF) && (Sou_Nor_Yellow_Time==0XFF) && (Sou_Nor_Red_Time_Temp==0XFF) && (West_East_Yellow_Time==0XFF))
 		{
 			s_n_stop_flag = 0;
 			e_w_stop_flag = 0;
@@ -76,9 +76,8 @@ void display()
 }
 
 void int0() interrupt 0//外部中断INT0，对于特殊车总的车辆（120,110,119）等，禁止其他车辆通行信号
-{	
-	TR0 = 0;
-	stop_flag = 1;
+{
+	enter_stop_flag = 1;
 }
 void timer0() interrupt 1//定时器T0中断
 {
