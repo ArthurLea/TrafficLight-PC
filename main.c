@@ -68,7 +68,7 @@ int main()
 	init_max7219();
 	quit_led();
 	buzzer();
-	send_reset_to_phone('9'); //下位机复位
+	send_comm_to_phone('9'); //下位机复位
 	while(1)
 	{	 
 		/*系统开始检测系统模式，当OK键在所有键以及手机控制之前按下时为自动模式,每个方向计时20s
@@ -79,6 +79,10 @@ int main()
 		key_num = scankey();
 		if((key_num==OK) || (Phone_OK_Finish==1))//按键端直接控制，系统正式启动 
 		{
+			if(key_num==OK)
+			{
+				send_comm_to_phone('0'); //下位机通过按键开启
+			}
 			Phone_OK_Finish = 0;
 			init_led();
 			init_Numeric_Display();
@@ -89,7 +93,6 @@ int main()
 			send_cycle_time_to_phone('8',cycle_time);//发送循环时间		  
 			while(1)
 			{
-				
 				/*
 				 * 手机端远程控制模块
 				 */
@@ -99,19 +102,21 @@ int main()
 				 */
 				if(enter_stop_flag == 1)//紧急情况标记
 				{	
-					TR0 = 0;//禁停后，关闭定时器
-					buzzer();			  
+					TR0 = 0;//禁停后，关闭定时器 
 					all_led_red();
+					send_comm_to_phone('2');//开启禁停
 					while(enter_stop_flag)
 					{
 						key_num = scankey();
 						phone_remote_control();
 						if((OK==key_num) || (Phone_OK_Finish == 1) || (quit_stop_flag==1))
 						{
+							key_num = 17;
 							enter_stop_flag = 0;
 							Phone_OK_Finish = 0;		 
 							quit_stop_flag = 0;
-							TR0 = 1;//再次启动定时器
+							TR0 = 1;//再次启动定时器  
+							send_comm_to_phone('3');//关闭禁停
 						}
 					}
 				}
@@ -252,7 +257,7 @@ int main()
  */
 void phone_remote_control()	
 {
-	uint i;
+//	uint i;
 	switch(uartState)
 	{
 		case UART_IDLE://串口未有数据状态
@@ -288,11 +293,11 @@ void phone_remote_control()
 			//将手机端接收到的字符串转换为16进制
 			uartState = UART_IDLE; 
 
-			for(i=0; i<pointer;i++)
-			{
-				sendByte(recieve_Buf[i]);
-				delay(1);
-			}
+//			for(i=0; i<pointer;i++)
+//			{
+//				sendByte(recieve_Buf[i]);
+//				delay(1);
+//			}
 
 	  		g_cCommand = recieve_Buf[2] ; //取出功能命令字
 //					i =	g_cReceBuf[0]-2;

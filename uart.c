@@ -125,7 +125,7 @@ void send_cycle_time_to_phone(uchar command,uint cycle_time)
 		delay(1);	
 	}
 }
-void send_reset_to_phone(uchar command)
+void send_comm_to_phone(uchar command)
 {
 		uchar dat[8] = {'0'};
 	uint i = 0;

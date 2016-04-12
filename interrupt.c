@@ -78,6 +78,7 @@ void display()
 void int0() interrupt 0//外部中断INT0，对于特殊车总的车辆（120,110,119）等，禁止其他车辆通行信号
 {
 	enter_stop_flag = 1;
+	buzzer();			 
 }
 void timer0() interrupt 1//定时器T0中断
 {

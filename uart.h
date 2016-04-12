@@ -23,5 +23,5 @@
 	extern void send_eas_wes_nums_to_phone(uchar command,uint eas_wes_nums);
 	extern void send_cycle_nums_to_phone(uchar command,uint cycle_nums);
 	extern void send_cycle_time_to_phone(uchar command,uint cycle_time);
-	extern void send_reset_to_phone(uchar command);
+	extern void send_comm_to_phone(uchar command);
 #endif

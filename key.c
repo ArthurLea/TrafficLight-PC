@@ -112,17 +112,23 @@ void set_time(uint flag)
 		}
 		if(flag == 1)//南北
 		{
-			Sou_Nor_Green_Time = result;
-			Sou_Nor_Green_Time_Temp = result;
-			wr_max7219(Addr_Digit0,max7219_7led_code[Sou_Nor_Green_Time_Temp/10]);	 
-			wr_max7219(Addr_Digit1,max7219_7led_code[Sou_Nor_Green_Time_Temp%10]);
+			if(result != 0)
+			{
+				Sou_Nor_Green_Time = result;
+				Sou_Nor_Green_Time_Temp = result;
+				wr_max7219(Addr_Digit0,max7219_7led_code[Sou_Nor_Green_Time_Temp/10]);	 
+				wr_max7219(Addr_Digit1,max7219_7led_code[Sou_Nor_Green_Time_Temp%10]);
+			}
 		}
 		if(flag == 2)//东西
-		{
-			Sou_Nor_Red_Time = result;
-			Sou_Nor_Red_Time_Temp = Sou_Nor_Red_Time;
-			wr_max7219(Addr_Digit2,max7219_7led_code[Sou_Nor_Red_Time_Temp/10]);	 
-			wr_max7219(Addr_Digit3,max7219_7led_code[Sou_Nor_Red_Time_Temp%10]);				
+		{	 
+			if(result != 0)
+			{
+				Sou_Nor_Red_Time = result;
+				Sou_Nor_Red_Time_Temp = Sou_Nor_Red_Time;
+				wr_max7219(Addr_Digit2,max7219_7led_code[Sou_Nor_Red_Time_Temp/10]);	 
+				wr_max7219(Addr_Digit3,max7219_7led_code[Sou_Nor_Red_Time_Temp%10]);
+			}				
 		}
 		current_key = 16;
 	}
